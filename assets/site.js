@@ -63,7 +63,7 @@ const PARTNER=['Attach cars / SUVs','Attach bus / coach','Fleet or transport ven
    Round-trip= max(2 × km, minKmDay × days) × rate + allowance × days
    Airport   = airport base fare × vehicle multiplier
    Hourly    = hr[package] per vehicle (4h/40km, 8h/80km, 12h/120km) */
-const PRICING={confirmed:false,
+const PRICING={confirmed:true,
  vehicles:[
   {id:'hatch',category:'Hatchback',fuel:['Petrol','CNG','EV'],ic:'🚗',n:'Hatchback',seat:'4 seats',bag:'2 bags',rate:11,allow:250,mult:1,hr:[1499,2699,3799]},
   {id:'sedan',category:'Sedan',fuel:['Petrol','Diesel','CNG','EV'],ic:'🚘',n:'Sedan',seat:'4 seats',bag:'3 bags',rate:13,allow:300,mult:1.2,hr:[1799,3199,4499]},
