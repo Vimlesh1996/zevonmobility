@@ -1,53 +1,59 @@
 /* ZEVON MOBILITY — shared site script (header/footer, data, renderers) */
-const CFG={wa:'917503303350',phone:'+91 96484 96425',mail:'info@zevonmobility.com',site:'zevonmobility.com'};
+const CFG={wa:'917503303350',phone:'+91 96484 96425',mail:'info@zevonmobility.com',site:'zevonmobility.com'}; // Confirm these contact details before launch.
 const D={
 sol:[
-{id:'airport',ic:'✈️',t:'Airport Mobility Solutions',s:'End-to-end passenger and crew movement within airport premises. Tarmac transfers, terminal connectivity, VIP ground handling with full EV fleet.',f:['Tarmac transfers for passengers and crew','Terminal connectivity','VIP ground handling','Full EV fleet, zero emissions']},
-{id:'corporate',ic:'🏢',t:'Corporate Transportation',s:'Seamless employee commute solutions with AI-optimized routing, GPS tracking, digital attendance, and dedicated account management for enterprises.',f:['AI-optimized routing','GPS tracking on every trip','Digital attendance','Dedicated account management']},
-{id:'fleet',ic:'🚗',t:'EV Fleet Operations',s:'Full-scale EV fleet deployment and management. Charging infrastructure, maintenance, driver training, and analytics — all under one platform.',f:['Charging infrastructure','Maintenance and driver training','Fleet analytics on one platform']},
-{id:'dispatch',ic:'📡',t:'Smart Dispatch System',s:'AI-powered dispatch and scheduling with real-time allocation, live vehicle tracking, and automated fleet optimization for maximum efficiency.',f:['Real-time vehicle allocation','Live vehicle tracking','Automated fleet optimization']},
-{id:'ground',ic:'👷',t:'Ground Support Operations',s:'Professionally trained ground crew for coordination, passenger assistance, logistics support, and last-mile operations at airports and venues.',f:['Trained ground crew','Passenger assistance','Logistics and last-mile support']},
-{id:'platform',ic:'🌐',t:'Enterprise Mobility Platform',s:'Scalable mobility-as-a-service for large corporates. Custom SLAs, dedicated fleet, real-time analytics dashboard, and 24×7 control room support.',f:['Custom SLAs and dedicated fleet','Real-time analytics dashboard','24×7 control room support']}],
+{id:'corporate',ic:'🏢',t:'Corporate Mobility & ETS',s:'Employee transportation, scheduled commute, dedicated vehicles, airport transfers and managed mobility programmes for organisations.',f:['Employee pickup and drop programmes','Dedicated or pooled vehicle deployment','Shift-wise route and trip coordination','Service-level and reporting arrangements']},
+{id:'rentals',ic:'🚘',t:'Car Rentals & Chauffeur Services',s:'Local, airport, outstation, hourly and executive travel with suitable vehicle options sourced from owned and verified partner fleets.',f:['Local and point-to-point rentals','Airport pickup and drop','Outstation one-way and round trips','Hourly and executive travel']},
+{id:'bus',ic:'🚌',t:'Bus & Coach Transportation',s:'Group transportation for employee commute, events, tours and institutional requirements, subject to city and vehicle availability.',f:['Staff buses and employee shuttles','Tourist buses and coaches','Event and group transportation','Route-based or project-based deployment']},
+{id:'fleet',ic:'🚗',t:'Fleet & Vendor Management',s:'Vehicle sourcing, partner coordination, driver deployment and fleet operations support for businesses with changing transportation needs.',f:['Own and partner fleet sourcing','Vendor and driver coordination','Vehicle attachment enquiries','Operational reporting and coordination']},
+{id:'ev',ic:'⚡',t:'EV & Sustainable Mobility',s:'Electric vehicle deployment and sustainable transport options for customers and organisations looking to introduce lower-emission journeys.',f:['EV car rental options where available','Corporate EV deployment enquiries','EV fleet transition planning','Sustainability-focused mobility options']},
+{id:'airport',ic:'✈️',t:'Airport Transfers',s:'Pre-arranged airport pickup and drop services for individual travellers, executives, guests and corporate teams.',f:['Airport pickup and drop','Meet-and-greet requests on confirmation','Sedan, SUV and premium options subject to availability','Flight and pickup coordination']}
+],
 ind:[
-{id:'airports',ic:'✈️',tag:'PRIORITY SECTOR',t:'Airports',s:'Tarmac & terminal mobility solutions',sol:['airport','ground','dispatch']},
-{id:'corporate-offices',ic:'🏢',tag:'ENTERPRISE',t:'Corporate Offices',s:'Employee transport & car rental',sol:['corporate','platform','dispatch']},
-{id:'hotels',ic:'🏨',tag:'HOSPITALITY',t:'Hotels & Resorts',s:'Premium guest mobility services',sol:['fleet','dispatch','ground']},
-{id:'smart-cities',ic:'🏙️',tag:'GOVERNMENT',t:'Smart Cities',s:'Urban EV mobility ecosystems',sol:['platform','fleet','dispatch']},
-{id:'industrial',ic:'🏭',tag:'INDUSTRIAL',t:'Industrial Parks',s:'Staff & logistics transport',sol:['corporate','fleet','platform']},
-{id:'events',ic:'🎪',tag:'EVENTS',t:'Special Events',s:'VIP and large-scale event mobility',sol:['ground','dispatch','fleet']}],
+{id:'it-ites',ic:'💻',tag:'CORPORATE',t:'IT & ITES',s:'Employee commute and shift-based transportation',sol:['corporate','fleet','airport']},
+{id:'banking',ic:'🏦',tag:'ENTERPRISE',t:'Banking & Financial Services',s:'Employee movement and executive travel',sol:['corporate','rentals','fleet']},
+{id:'healthcare',ic:'🏥',tag:'HEALTHCARE',t:'Healthcare',s:'Staff, visitor and scheduled transport needs',sol:['corporate','rentals','bus']},
+{id:'hospitality',ic:'🏨',tag:'HOSPITALITY',t:'Hotels & Hospitality',s:'Guest transfers and group movement',sol:['airport','rentals','bus']},
+{id:'manufacturing',ic:'🏭',tag:'INDUSTRIAL',t:'Manufacturing & Industrial Parks',s:'Shift commute and workforce transportation',sol:['corporate','bus','fleet']},
+{id:'education',ic:'🎓',tag:'INSTITUTIONS',t:'Education & Institutions',s:'Staff, student and event transportation enquiries',sol:['bus','rentals','fleet']},
+{id:'events',ic:'🎪',tag:'EVENTS',t:'Events & Group Travel',s:'Guest, crew and group transportation',sol:['bus','rentals','fleet']},
+{id:'airports',ic:'✈️',tag:'AIRPORTS',t:'Airports & Travel',s:'Passenger and corporate airport transfers',sol:['airport','rentals','fleet']}
+],
 why:[
-{ic:'⚡',t:'100% Electric, Zero Emissions',s:"Our entire fleet runs on EV — cleaner operations, lower carbon footprint, and alignment with India's green mobility mission."},
-{ic:'🤖',t:'AI-Enabled Smart Dispatch',s:'Intelligent routing and real-time fleet allocation ensures zero idle time, faster response, and maximum utilization.'},
-{ic:'📊',t:'Real-time Analytics & Reporting',s:'Live dashboards, trip reports, driver scorecards, and compliance monitoring — full operational visibility at all times.'},
-{ic:'🔒',t:'Safety-First Operations',s:'Verified drivers, GPS tracking, panic alerts, and stringent safety protocols ensure passenger safety on every trip.'}],
+{ic:'🤝',t:'One Mobility Partner',s:'A single point of contact for car rentals, employee transportation, buses, coaches and EV mobility enquiries.'},
+{ic:'🚘',t:'Flexible Fleet Options',s:'Vehicle sourcing can combine ZEVON-managed vehicles and verified transport partners, subject to availability.'},
+{ic:'🛡️',t:'Verification-led Operations',s:'Vehicle, permit, insurance and driver checks are part of the proposed partner onboarding and service confirmation process.'},
+{ic:'📊',t:'Clear Service Coordination',s:'Defined trip details, agreed scope, service contacts and reporting expectations for each confirmed engagement.'}],
 steps:[
-{ic:'📋',t:'Request Raised',s:'Client submits a transport requirement via our platform or dedicated account manager.'},
-{ic:'⚡',t:'AI Dispatch',s:'Our smart system automatically assigns the best available EV and driver.'},
-{ic:'🚗',t:'EV Assigned',s:'A verified, GPS-enabled electric vehicle is dispatched to the pickup point.'},
-{ic:'📍',t:'Live Tracking',s:'Real-time vehicle tracking and status updates for complete transparency.'},
-{ic:'📊',t:'Trip Analytics',s:'Automated reports, billing, and operational insights delivered post-trip.'}],
+{ic:'📋',t:'Share Requirement',s:'Tell us the service, city, route, date, passenger count and vehicle category you need.'},
+{ic:'🔎',t:'Availability Check',s:'Our team checks suitable own-fleet and partner options, route feasibility and commercial terms.'},
+{ic:'🧾',t:'Receive a Quote',s:'We share an indicative or confirmed proposal based on verified availability and agreed inclusions.'},
+{ic:'🤝',t:'Confirm Service',s:'Once the booking or contract is accepted, the vehicle and service details are reconfirmed.'},
+{ic:'🚗',t:'Travel & Support',s:'The trip proceeds with the agreed pickup details and support contact.'}],
 vis:[
-{ic:'🤖',t:'AI Dispatch Network',s:'Proprietary AI dispatch engine for zero-wait, optimized EV fleet allocation across PAN India operations.'},
-{ic:'⚡',t:'EV Charging Ecosystem',s:'Developing owned and partnered charging infrastructure to ensure continuous EV fleet availability 24×7.'},
-{ic:'✈️',t:'Airport Integration',s:'Deep integration with airport operations, airlines, and ground handlers for frictionless passenger mobility.'},
-{ic:'🌱',t:'Green Transportation',s:'Committed to ESG-aligned mobility — zero emissions, responsible operations, and sustainable fleet growth.'},
-{ic:'🗺️',t:'Pan India Expansion',s:'Rapid expansion across Tier 1 and Tier 2 cities with scalable franchise and partner-led models.'},
-{ic:'📱',t:'Digital Platform',s:'Enterprise mobility app with live tracking, booking, analytics, and fleet management — all in one dashboard.'}],
+{ic:'🚘',t:'Multi-category Fleet',s:'Hatchback, sedan, SUV, MUV, premium vehicles, vans, buses and coaches can be requested.'},
+{ic:'🌐',t:'Partner Network',s:'A partner-led sourcing model helps evaluate vehicle options across service locations.'},
+{ic:'⚡',t:'EV Options',s:'Electric mobility remains an important dedicated service vertical within the wider ZEVON portfolio.'},
+{ic:'📍',t:'City-wise Availability',s:'Services are confirmed location by location after checking vehicle and vendor availability.'},
+{ic:'📱',t:'Digital Enquiry',s:'Customers can submit requirements through the website and continue via WhatsApp or email.'},
+{ic:'📑',t:'Business Proposals',s:'Corporate enquiries can be scoped around employee count, shifts, routes, fleet type and contract duration.'}],
 faq:[
-['Which sectors do you serve?','Airports, corporate offices, hotels and resorts, smart cities, industrial parks, and special events.'],
-['Is the whole fleet electric?','Yes. The fleet is 100% EV, so operations run with zero emissions.'],
-['How are vehicles assigned?','Our AI dispatch system assigns the best available EV and a verified driver, and you can follow the vehicle live.'],
-['Can you support large enterprises?','Yes. The Enterprise Mobility Platform offers custom SLAs, a dedicated fleet, an analytics dashboard, and 24×7 control room support.'],
-['How is the fare calculated?','Fares depend on the trip type (airport, outstation or hourly), the distance or package, and the vehicle. Search your trip to see indicative fares; tolls, parking and state taxes are extra where applicable, and the final fare is confirmed when you book.'],
-['How do I get a quote?','Send the enquiry form, WhatsApp, or email. Our team replies within 24 hours.']]};
+['What services does ZEVON offer?','ZEVON accepts enquiries for corporate employee transportation, car rentals, airport transfers, outstation travel, hourly rentals, buses, coaches, fleet sourcing and EV mobility. Availability is confirmed for each location and requirement.'],
+['Does ZEVON provide only electric vehicles?','No. ZEVON is positioned as a complete mobility and transportation partner. Vehicle options may include EV, CNG, petrol and diesel, depending on the category, city and verified availability.'],
+['Does ZEVON operate its own fleet?','ZEVON uses an own-fleet and partner-fleet model. Specific vehicle ownership, sourcing and availability are confirmed when a requirement is evaluated.'],
+['Can I book a bus or coach?','You can submit a bus or coach enquiry with the city, route, date, passenger count and trip duration. Our team will check availability and share a quotation.'],
+['Are the website fares final?','No. The current fare calculator contains sample figures for demonstration and must not be treated as a live commercial offer. Final rates require ZEVON approval and confirmation of vehicle availability, route, inclusions and applicable taxes.'],
+['What additional charges may apply?','Depending on the confirmed quotation, tolls, parking, state taxes, permits, driver allowance, waiting, night charges or extra distance may apply. These should be disclosed in the final quote.'],
+['How can a vehicle owner become a partner?','Use the Partner With Us page to share your city, vehicle category, fleet size and contact details. Vehicle and document verification is required before any deployment.'],
+['How do I get a corporate proposal?','Use the Corporate Mobility enquiry form and share your locations, employee count, shift timings, vehicle requirement and expected contract duration.']]}
 
 /* reviews: add real client reviews here, e.g. {q:'Great service…',n:'Name, Company',r:'Airport client'} — the section stays hidden while empty */
 D.reviews=[];
 D.ins=[
-{id:'airport-ev-planning',tag:'Airports',m:3,t:'Five things to settle before electrifying airport ground transport',s:'A practical checklist for operators moving passengers and crew on airport premises.',b:['Airport movement is a tight rhythm of arrivals, shift changes and VIP requests. Before electrifying any part of it, map when vehicles are needed, not just how many.','Settle five things first: charging locations close to the work, charging windows that fit the duty cycle, a dispatch system that knows each vehicle’s battery state, trained drivers who understand EV handling, and reporting that shows utilisation by hour.','Get these right and an EV fleet is quieter, cleaner and easier to track than what it replaces. That is the model ZEVON builds for airport mobility: electric vehicles, smart dispatch and trained ground crew working as one operation.']},
-{id:'corporate-commute',tag:'Enterprise',m:3,t:'Employee commute with EVs: routing, safety and reporting',s:'What corporate teams should ask for when moving staff in electric vehicles.',b:['A good commute programme is judged on three things: whether people arrive on time, whether they feel safe, and whether the company can prove both.','Ask for optimised routing that adapts to changes in headcount, GPS tracking on every vehicle, verified drivers, digital attendance and trip reports. Panic alerts and clear escalation paths matter most on late shifts.','Going electric adds a fourth benefit: lower emissions you can report. Together these are the building blocks of ZEVON’s corporate transportation solution.']},
-{id:'smart-dispatch',tag:'Technology',m:2,t:'Why smart dispatch matters even more for electric fleets',s:'Battery state changes the dispatch problem. Here is how.',b:['With petrol or diesel, a vehicle stays available until the tank runs low and refuelling takes minutes. With an EV, battery level and charging time shape every assignment.','A dispatch system that sees battery state, location and demand together can assign the right vehicle, keep idle time low and schedule charging when it disrupts service least.','That is why AI-assisted dispatch sits at the centre of ZEVON’s platform: real-time allocation, live tracking and automated optimisation.']}];
-const PARTNER=['Fleet Partner — attach my EVs','Franchise Partner','Charging / Energy Partner','Investor','Other partnership'];
+{id:'airport-mobility-planning',tag:'Airports',m:3,t:'Planning reliable airport ground transportation',s:'A practical checklist for coordinating passenger and crew movement.',b:['Airport movement depends on arrival patterns, shift changes, pickup locations, passenger needs and vehicle availability. Start by mapping the service windows and passenger volumes.','Confirm vehicle categories, permits, pickup instructions, dispatch contacts, waiting rules and escalation procedures before the operation begins.','A well-defined operating plan helps customers, drivers and coordinators understand their responsibilities and reduces last-minute confusion.']},
+{id:'corporate-commute',tag:'Enterprise',m:3,t:'What to define in an employee transportation programme',s:'Key questions for organisations planning recurring staff commute.',b:['A reliable employee commute programme starts with accurate employee counts, pickup zones, shift timings, route feasibility and a realistic vehicle mix.','Agree on driver and vehicle verification, attendance methods, service contacts, escalation processes, reporting frequency and billing rules before launch.','Review service performance regularly and update routes as headcount, shifts or office locations change.']},
+{id:'fleet-sourcing',tag:'Fleet',m:2,t:'How to evaluate a transport fleet partner',s:'A checklist for businesses comparing vehicle and vendor options.',b:['Start with the service requirement: passenger capacity, route, schedule, operating city, contract period and service expectations.','Check the vehicle documents, permits, insurance, fitness, pollution certificate where applicable, driver credentials, backup arrangements and escalation contacts.','Compare the full commercial scope, including included kilometres, duty hours, tolls, parking, taxes, waiting, cancellation and extra-distance charges.']}];
+const PARTNER=['Attach cars / SUVs','Attach bus / coach','Fleet or transport vendor','City operating partner','Other partnership'];
 /* ================= PRICING — EDIT THESE NUMBERS BEFORE GOING LIVE =================
    Everything below is SAMPLE data so the fare mechanism works. Replace the rates,
    vehicles, airports, routes (city, city, km) and notes with your real ones, then set
@@ -59,28 +65,30 @@ const PARTNER=['Fleet Partner — attach my EVs','Franchise Partner','Charging /
    Hourly    = hr[package] per vehicle (4h/40km, 8h/80km, 12h/120km) */
 const PRICING={confirmed:false,
  vehicles:[
-  {id:'hatch',ic:'🚗',n:'EV Hatchback',seat:'4 seats',bag:'2 bags',rate:11,allow:250,mult:1,hr:[1499,2699,3799]},
-  {id:'sedan',ic:'🚘',n:'EV Sedan',seat:'4 seats',bag:'3 bags',rate:13,allow:300,mult:1.2,hr:[1799,3199,4499]},
-  {id:'suv',ic:'🚙',n:'EV SUV',seat:'6 seats',bag:'4 bags',rate:17,allow:400,mult:1.6,hr:[2399,4299,5999]},
-  {id:'van',ic:'🚐',n:'EV Van (12 seater)',seat:'12 seats',bag:'8 bags',rate:28,allow:600,mult:2.4,hr:[3999,6999,9999]}],
+  {id:'hatch',category:'Hatchback',fuel:['Petrol','CNG','EV'],ic:'🚗',n:'Hatchback',seat:'4 seats',bag:'2 bags',rate:11,allow:250,mult:1,hr:[1499,2699,3799]},
+  {id:'sedan',category:'Sedan',fuel:['Petrol','Diesel','CNG','EV'],ic:'🚘',n:'Sedan',seat:'4 seats',bag:'3 bags',rate:13,allow:300,mult:1.2,hr:[1799,3199,4499]},
+  {id:'suv',category:'SUV / MUV',fuel:['Petrol','Diesel','CNG','EV'],ic:'🚙',n:'SUV / MUV',seat:'6-7 seats',bag:'4 bags',rate:17,allow:400,mult:1.6,hr:[2399,4299,5999]},
+  {id:'premium',category:'Premium / Luxury',fuel:['Petrol','Diesel','EV'],ic:'🚖',n:'Premium / Luxury',seat:'4-5 seats',bag:'3 bags',rate:24,allow:500,mult:2,hr:[3499,5999,8499]},
+  {id:'van',category:'Van',fuel:['Diesel','CNG','EV'],ic:'🚐',n:'Van / Traveller',seat:'9-17 seats',bag:'8 bags',rate:28,allow:600,mult:2.4,hr:[3999,6999,9999]},
+  {id:'bus',category:'Bus / Coach',fuel:['Diesel','CNG','EV'],ic:'🚌',n:'Bus / Coach',seat:'18-50+ seats',bag:'Group luggage',rate:42,allow:900,mult:3.5,hr:[6999,11999,16999]}],
  pk:[{h:4,km:40},{h:8,km:80},{h:12,km:120}],
  minKmDay:250,
  airport:{'Delhi NCR':899,'Mumbai':999,'Bengaluru':1199,'Hyderabad':999,'Chennai':899,'Pune':949},
  hourlyCities:['Delhi NCR','Mumbai','Bengaluru','Hyderabad','Chennai','Pune','Jaipur','Ahmedabad','Kolkata'],
  routes:[['Delhi','Agra',230],['Delhi','Jaipur',280],['Delhi','Chandigarh',245],['Delhi','Haridwar',220],['Delhi','Mathura',150],['Mumbai','Pune',150],['Bengaluru','Mysuru',145],['Chennai','Puducherry',155],['Ahmedabad','Vadodara',110],['Bhubaneswar','Puri',60]],
- notes:['Fares shown are indicative; the final fare is confirmed when you book.','Tolls, parking and state taxes are extra where applicable.','Distance or hours beyond the package are charged at the standard rate.','Charging stops on longer trips are planned by our team.','Route not listed? Ask for a custom quote on WhatsApp.']};
+ notes:['Fares shown are indicative; the final fare is confirmed when you book.','Tolls, parking and state taxes are extra where applicable.','Distance or hours beyond the package are charged at the standard rate.','For EV journeys, charging requirements and stops must be checked for the specific vehicle and route.','Route not listed? Ask for a custom quote on WhatsApp.']};
 const $=(s,r=document)=>r.querySelector(s),$$=(s,r=document)=>[...r.querySelectorAll(s)];
 const reduce=matchMedia('(prefers-reduced-motion:reduce)').matches;
 const here=(location.pathname.split('/').pop()||'index.html').replace('solution.html','solutions.html').replace('insight.html','insights.html').replace('book.html','fares.html');
-const NAV=[['index.html','Home'],['about.html','About'],['solutions.html','Solutions'],['fares.html','Fares'],['industries.html','Industries'],['partner.html','Partner'],['contact.html','Contact']];
+const NAV=[['index.html','Home'],['solutions.html','Services'],['corporate.html','Corporate'],['vehicles.html','Vehicles'],['fares.html','Book / Fares'],['industries.html','Industries'],['partner.html','Partner'],['about.html','About'],['contact.html','Contact']];
 const logo='<a href="index.html" class="logo"><i></i><span><b>ZEVON</b><small>MOBILITY</small></span></a>';
 
 document.body.insertAdjacentHTML('afterbegin',`<div class="prog" id="prog"></div><header id="hd"><div class="wrap hd">${logo}
 <nav class="menu" id="menu">${NAV.map(([h,t])=>`<a href="${h}"${h===here?' class="on" aria-current="page"':''}>${t}</a>`).join('')}</nav>
 <div class="hd-cta"><button class="sbtn" id="sbtn" aria-label="Search (Ctrl+K)">🔍</button><a href="contact.html" class="btn btn-red">Get a Quote</a><button class="burger" aria-label="Menu" aria-expanded="false"><span></span><span></span><span></span></button></div></div></header>`);
 document.body.insertAdjacentHTML('beforeend',`<footer><div class="wrap"><div class="ft">
-<div>${logo}<p style="margin-top:18px;max-width:320px">Smart EV mobility solutions for airports, enterprises &amp; modern transportation ecosystems. Always ON. Always green.</p></div>
-<div><h5>Solutions</h5><ul>${D.sol.map(s=>`<li><a href="solution.html?s=${s.id}">${s.t.replace(' Solutions','')}</a></li>`).join('')}</ul></div>
+<div>${logo}<p style="margin-top:18px;max-width:320px">Complete mobility and transportation solutions for businesses, travellers and partners. Smart. Reliable. Sustainable. Always ON.</p></div>
+<div><h5>Solutions</h5><ul>${D.sol.map(s=>`<li><a href="solution.html?s=${s.id}">${s.t}</a></li>`).join('')}</ul></div>
 <div><h5>Company</h5><ul>${NAV.map(([h,t])=>`<li><a href="${h}">${t}</a></li>`).join('')}<li><a href="insights.html">Insights</a></li></ul></div>
 <div><h5>Contact</h5><ul><li>${CFG.mail}</li><li>${CFG.phone}</li><li>${CFG.site}</li><li><a href="https://wa.me/${CFG.wa}">WhatsApp</a> &nbsp;·&nbsp; <a href="mailto:${CFG.mail}">Email</a></li></ul></div></div>
 <div class="fb"><div>© ${new Date().getFullYear()} ZEVON MOBILITY. All rights reserved.</div><div>Smart Mobility. <b>Always ON.</b></div></div></div></footer>
@@ -113,7 +121,7 @@ detail:el=>{const id=new URLSearchParams(location.search).get('s'),k=D.sol.findI
 
 const inr=n=>'₹'+Math.round(n).toLocaleString('en-IN'),rnd=n=>Math.round(n/10)*10;
 const addDays=n=>new Date(Date.now()+n*864e5).toISOString().slice(0,10),today=()=>addDays(0),tmr=()=>addDays(1);
-const smp=()=>PRICING.confirmed?'':'<span class="smp" title="Edit rates in assets/site.js">Sample rates</span>';
+const smp=()=>PRICING.confirmed?'':'<span class="smp" title="Sample rates — replace with approved rates before launch">Sample rates</span>';
 const cityList=[...new Set(PRICING.routes.flatMap(r=>[r[0],r[1]]))].sort();
 const dests=f=>PRICING.routes.filter(r=>r[0]===f||r[1]===f).map(r=>r[0]===f?r[1]:r[0]);
 const kmOf=(a,b)=>{const r=PRICING.routes.find(r=>(r[0]===a&&r[1]===b)||(r[0]===b&&r[1]===a));return r?r[2]:0};
@@ -121,7 +129,7 @@ const dayDiff=(a,b)=>Math.max(1,Math.round((new Date(b)-new Date(a))/864e5)+1);
 const qs=o=>'book.html?'+new URLSearchParams(o);
 function fares(q){const t=q.type,km=kmOf(q.from,q.to),k=PRICING.pk[+q.pkg||0];
   if((t==='airport'&&!PRICING.airport[q.city])||(t==='hourly'&&!k)||((t==='oneway'||t==='round')&&!km))return null;
-  return PRICING.vehicles.map(v=>{let p,note;
+  return PRICING.vehicles.filter(v=>(!q.vehicle||q.vehicle==='any'||v.category===q.vehicle)&&(!q.fuel||q.fuel==='any'||v.fuel.includes(q.fuel))).map(v=>{let p,note;
     if(t==='airport'){p=PRICING.airport[q.city]*v.mult;note='Flat fare · '+(q.dir||'To airport')}
     else if(t==='hourly'){p=v.hr[+q.pkg||0];note=`${k.h} hours · ${k.km} km included`}
     else if(t==='oneway'){p=km*v.rate+v.allow;note=`${km} km · one way`}
@@ -146,13 +154,14 @@ const FD={sel:(f,v)=>`<select name="${f.n}">${f.o.map(o=>{const a=Array.isArray(
   time:(f,v)=>`<input name="${f.n}" type="time" value="${v||'09:00'}" required>`};
 const dt={n:'date',l:'Departure',t:'date'},tm={n:'time',l:'Pickup time',t:'time'};
 const fr={n:'from',l:'From',t:'sel',o:cityList,w:1,d:'Delhi'},to={n:'to',l:'To',t:'sel',o:[],w:1};
+const fleetFields=[{n:'vehicle',l:'Vehicle category',t:'sel',o:[['any','Any suitable category'],['Hatchback','Hatchback'],['Sedan','Sedan'],['SUV / MUV','SUV / MUV'],['Premium / Luxury','Premium / Luxury'],['Van','Van'],['Bus / Coach','Bus / Coach']],w:1,d:'any'},{n:'fuel',l:'Fuel preference',t:'sel',o:[['any','Any suitable fuel'],['EV','Electric'],['CNG','CNG'],['Petrol','Petrol'],['Diesel','Diesel']],w:1,d:'any'}];
 const TT=[
- {k:'airport',l:'Airport',t:'Airport Transfer',f:[{n:'dir',l:'Trip',t:'sel',o:['To airport','From airport'],w:1},{n:'city',l:'City',t:'sel',o:Object.keys(PRICING.airport),w:1},{n:'addr',l:'Pickup / drop address',t:'txt',p:'Address',w:1},{...dt,l:'Date'},tm]},
- {k:'oneway',l:'One-Way',t:'Outstation One-Way',f:[fr,to,dt,tm]},
- {k:'round',l:'Round-Trip',t:'Outstation Round-Trip',f:[fr,to,dt,{n:'rdate',l:'Return',t:'date'},tm]},
- {k:'hourly',l:'Hourly',t:'Hourly Rental',f:[{n:'city',l:'City',t:'sel',o:PRICING.hourlyCities,w:1},{n:'pkg',l:'Package',t:'sel',o:PRICING.pk.map((k,i)=>[i,`${k.h} hrs · ${k.km} km`]),w:1},{...dt,l:'Date'},tm]}];
+ {k:'airport',l:'Airport',t:'Airport Transfer',f:[{n:'dir',l:'Trip',t:'sel',o:['To airport','From airport'],w:1},{n:'city',l:'City',t:'sel',o:Object.keys(PRICING.airport),w:1},{n:'addr',l:'Pickup / drop address',t:'txt',p:'Address',w:1},{...dt,l:'Date'},tm,...fleetFields]},
+ {k:'oneway',l:'One-Way',t:'Outstation One-Way',f:[fr,to,dt,tm,...fleetFields]},
+ {k:'round',l:'Round-Trip',t:'Outstation Round-Trip',f:[fr,to,dt,{n:'rdate',l:'Return',t:'date'},tm,...fleetFields]},
+ {k:'hourly',l:'Hourly',t:'Hourly Rental',f:[{n:'city',l:'City',t:'sel',o:PRICING.hourlyCities,w:1},{n:'pkg',l:'Package',t:'sel',o:PRICING.pk.map((k,i)=>[i,`${k.h} hrs · ${k.km} km`]),w:1},{...dt,l:'Date'},tm,...fleetFields]}];
 R.book=el=>{const P=Object.fromEntries(new URLSearchParams(location.search));let cur=Math.max(0,TT.findIndex(t=>t.k===P.type));
-  el.innerHTML=`<div class="bk"><div class="bk-t" role="tablist">${TT.map((t,i)=>`<button type="button" role="tab" data-i="${i}" title="${t.t}">${t.t}</button>`).join('')}</div><form class="bk-f"></form><p class="bk-n">${smp()} See indicative fares instantly — the final fare is confirmed at booking.</p></div>`;
+  el.innerHTML=`<div class="bk"><div class="bk-t" role="tablist">${TT.map((t,i)=>`<button type="button" role="tab" data-i="${i}" title="${t.t}">${t.t}</button>`).join('')}</div><form class="bk-f"></form><p class="bk-n">${smp()} Sample calculator only. All prices are unapproved examples; request a confirmed quotation before booking.</p></div>`;
   const f=$('.bk-f',el),fill=p=>{const d=dests(f.elements.from.value);f.elements.to.innerHTML=d.map(x=>`<option${x===p?' selected':''}>${x}</option>`).join('')};
   const draw=i=>{cur=i;const T=TT[i],V=n=>P.type===T.k?P[n]:undefined;$$('.bk-t button',el).forEach((b,j)=>{b.classList.toggle('on',j===i);b.setAttribute('aria-selected',j===i)});
     f.innerHTML=`<div class="bk-g">${T.f.map(x=>`<div${x.w?' class="full"':''}><label>${x.l}</label>${FD[x.t](x,V(x.n)||x.d)}</div>`).join('')}</div><button class="btn btn-red go">Go — see fares</button><a class="alt-q" target="_blank" rel="noopener" href="https://wa.me/${CFG.wa}?text=${encodeURIComponent('Hello ZEVON, I need a custom quote for a route that is not listed.')}">Route not listed? Get a custom quote</a>`;
@@ -167,15 +176,15 @@ R.results=el=>{const q=Object.fromEntries(new URLSearchParams(location.search));
   const when=`${q.date||''}${q.time?' · '+q.time:''}${q.rdate?' → return '+q.rdate:''}`;
   const custom=`<a class="btn btn-out" target="_blank" rel="noopener" href="https://wa.me/${CFG.wa}?text=${encodeURIComponent(`Hello ZEVON, I need a custom quote.\nService: ${T.t}\nTrip: ${title}\nDate: ${when}`)}">Get a custom quote on WhatsApp</a>`;
   const head=`<div class="rh"><small>${T.t} ${smp()}</small><h2>${title}</h2><p>${when}</p></div>`;
-  if(!L){el.innerHTML=head+`<p class="empty">We don’t have a standard fare for this route yet. Our team will quote it for you.</p><div style="text-align:center">${custom}</div>`;return}
-  el.innerHTML=head+`<div class="fl">${L.map((x,i)=>`<div class="fc" data-i="${i}"><div class="fi"><div class="vi">${x.v.ic}</div><div><h3>${x.v.n}</h3><small>${x.v.seat} · ${x.v.bag}</small><p>${x.note}</p></div></div>
-  <div class="fp"><b>${inr(x.p)}</b><small>indicative fare</small><button class="btn btn-red" data-b="1">Book now</button></div>
+  if(!L||!L.length){el.innerHTML=head+`<p class="empty">We don’t have a standard fare for this route or vehicle preference yet. Our team will check availability and quote it for you.</p><div style="text-align:center">${custom}</div>`;return}
+  el.innerHTML=head+`<div class="fl">${L.map((x,i)=>`<div class="fc" data-i="${i}"><div class="fi"><div class="vi">${x.v.ic}</div><div><h3>${x.v.n}</h3><small>${x.v.category} · ${x.v.fuel.join(' / ')} · ${x.v.seat} · ${x.v.bag}</small><p>${x.note}</p></div></div>
+  <div class="fp"><b>${inr(x.p)}</b><small>sample fare — not a live offer</small><button class="btn btn-red" data-b="1">Book now</button></div>
   <form class="fbk" hidden><div class="fg"><div><label>Full name *</label><input name="name" required autocomplete="name"></div><div><label>Phone *</label><input name="phone" type="tel" required autocomplete="tel"></div><div class="full"><label>Pickup address</label><input name="addr" value="${q.addr||''}" autocomplete="street-address"></div></div>
   <div class="row"><button class="btn btn-red" data-via="wa">Confirm on WhatsApp</button><button class="btn btn-out" data-via="mail">Email</button></div></form></div>`).join('')}</div>
   <div class="notes"><h3>How pricing works</h3><ul class="ticks">${PRICING.notes.map(n=>`<li>${n}</li>`).join('')}</ul><div style="margin-top:24px">${custom}</div></div>`;
   el.onclick=e=>{const b=e.target.closest('[data-b]');if(!b)return;const fm=b.closest('.fc').querySelector('.fbk');fm.hidden=!fm.hidden;b.textContent=fm.hidden?'Book now':'Close'};
   el.onsubmit=e=>{e.preventDefault();const x=L[+e.target.closest('.fc').dataset.i],f=e.target.elements;
-    sendMsg(`Hello ZEVON, I'd like to book.\nService: ${T.t}\nTrip: ${title}\nDate/Time: ${when}\nVehicle: ${x.v.n}\nIndicative fare: ${inr(x.p)}\nName: ${f['name'].value}\nPhone: ${f['phone'].value}\nPickup address: ${f['addr'].value||'-'}`,'Booking request — '+title,e.submitter.dataset.via==='mail')}};
+    sendMsg(`Hello ZEVON, I'd like to book.\nService: ${T.t}\nTrip: ${title}\nDate/Time: ${when}\nVehicle: ${x.v.n}\nSample calculator amount (not a quote): ${inr(x.p)}\nName: ${f['name'].value}\nPhone: ${f['phone'].value}\nPickup address: ${f['addr'].value||'-'}`,'Booking request — '+title,e.submitter.dataset.via==='mail')}};
 R.ins=el=>{el.className='cards';el.innerHTML=D.ins.map(a=>`<a class="card rv" href="insight.html?a=${a.id}"><span class="tg">${a.tag}</span><h3 style="margin-top:14px">${a.t}</h3><p>${a.s}</p><span class="more">Read · ${a.m} min →</span></a>`).join('')};
 R.insd=el=>{const a=D.ins.find(x=>x.id===new URLSearchParams(location.search).get('a'));
   if(!a){el.innerHTML='<div class="sh"><h2>Article not found</h2><a class="btn btn-red" href="insights.html">All insights</a></div>';return}
@@ -214,7 +223,7 @@ function enquiry(e){e.preventDefault();const f=e.target,v=n=>f.elements[n].value
 document.body.insertAdjacentHTML('beforeend',`<nav class="mbar" aria-label="Quick actions"><a href="tel:${CFG.phone.replace(/\s/g,'')}">📞 Call</a><a data-wa="Hello ZEVON, I'd like to know more.">💬 WhatsApp</a><a href="contact.html" class="q">Get Quote</a></nav>
 <div class="srch" id="srch" hidden><div class="sbox" role="dialog" aria-label="Search"><input id="sq" placeholder="Search solutions, industries, insights, FAQs…" autocomplete="off"><ul id="sr"></ul><small>Esc to close · Enter opens the first result</small></div></div>`);
 $$('[data-wa]').forEach(a=>{a.href=`https://wa.me/${CFG.wa}?text=${encodeURIComponent(a.dataset.wa)}`;a.target='_blank';a.rel='noopener'});
-const IDX=[...PRICING.routes.map(([a,b])=>({t:`${a} to ${b} EV cab`,h:qs({type:'oneway',from:a,to:b,date:tmr(),time:'09:00'}),k:'Fare'})),{t:'Fares & booking',h:'fares.html',k:'Page',x:'airport transfer outstation hourly rental price'},...NAV.map(([h,t])=>({t,h,k:'Page'})),...D.sol.map(s=>({t:s.t,h:'solution.html?s='+s.id,k:'Solution',x:s.s})),...D.ind.map(s=>({t:s.t,h:'industries.html#'+s.id,k:'Industry',x:s.s})),...D.ins.map(s=>({t:s.t,h:'insight.html?a='+s.id,k:'Insight',x:s.s})),...D.faq.map(([q,a])=>({t:q,h:'contact.html',k:'FAQ',x:a}))];
+const IDX=[...PRICING.routes.map(([a,b])=>({t:`${a} to ${b} car rental`,h:qs({type:'oneway',from:a,to:b,date:tmr(),time:'09:00'}),k:'Fare'})),{t:'Fares & booking',h:'fares.html',k:'Page',x:'airport transfer outstation hourly rental price'},...NAV.map(([h,t])=>({t,h,k:'Page'})),...D.sol.map(s=>({t:s.t,h:'solution.html?s='+s.id,k:'Solution',x:s.s})),...D.ind.map(s=>({t:s.t,h:'industries.html#'+s.id,k:'Industry',x:s.s})),...D.ins.map(s=>({t:s.t,h:'insight.html?a='+s.id,k:'Insight',x:s.s})),...D.faq.map(([q,a])=>({t:q,h:'contact.html',k:'FAQ',x:a}))];
 const sm=$('#srch'),sq=$('#sq'),sr=$('#sr');
 const sFind=()=>{const q=sq.value.trim().toLowerCase(),r=(q?IDX.filter(i=>(i.t+' '+(i.x||'')).toLowerCase().includes(q)):IDX.slice(0,8)).slice(0,8);
   sr.innerHTML=r.length?r.map(i=>`<li><a href="${i.h}"><b>${i.t}</b><span>${i.k}</span></a></li>`).join(''):'<li class="none">No results — try “airport” or “fleet”.</li>'};
