@@ -12,11 +12,11 @@
 <div class="card"><div class="ic">⚡</div><h3>Charging &amp; Energy Partner</h3><p>Discuss relevant fleet, energy or infrastructure partnership opportunities.</p></div>
 <div class="card"><div class="ic">📈</div><h3>Investor</h3><p>Share your business partnership interest and our team can review the proposal.</p></div></div></div></section>
 <section class="alt"><div class="wrap" style="max-width:760px"><div class="form rv"><h3>Tell us about your partnership</h3><p>Share your city and what you have in mind. Our team replies within 24 hours.</p>
-<form onsubmit="enquiry(event)"><div class="fg">
+<form data-zevon-form="partner"><div class="fg">
 <div><label for="n">Full Name *</label><input id="n" name="name" required autocomplete="name"></div><div><label for="c">Company / City *</label><input id="c" name="company" required></div>
-<div><label for="e">Email Address *</label><input id="e" name="email" type="email" required autocomplete="email"></div><div><label for="p">Phone Number</label><input id="p" name="phone" type="tel" autocomplete="tel"></div>
+<div><label for="e">Email Address *</label><input id="e" name="email" type="email" required autocomplete="email"></div><div><label for="p">Phone Number</label><input id="p" name="phone" type="tel" autocomplete="tel" required></div>
 <div class="full"><label for="s">Partnership type</label><select id="s" name="service" data-r="opts" data-list="partner"></select></div>
-<div class="full"><label for="m">Message</label><textarea id="m" name="message" placeholder="Fleet size, city, timeline…"></textarea></div></div>
-<div class="row"><button class="btn btn-red" type="submit" data-via="wa">Send on WhatsApp</button><button class="btn btn-out" type="submit" data-via="mail">Send by Email</button></div></form></div></div></section></main>
-<script src="assets/site.js"></script>
+<div><label for="city">City</label><input id="city" name="city"></div><div><label for="fleetSize">Fleet size</label><input id="fleetSize" name="fleetSize" type="number" min="1"></div><div class="full"><label for="vehicleCategories">Vehicle categories</label><input id="vehicleCategories" name="vehicleCategories" placeholder="Sedan, SUV, Bus, Coach"></div><div class="full"><label for="fuelTypes">Fuel types</label><input id="fuelTypes" name="fuelTypes" placeholder="EV, CNG, Petrol, Diesel"></div><div class="full"><label for="m">Message</label><textarea id="m" name="message" placeholder="Fleet size, city, timeline…"></textarea></div></div>
+<p data-form-status class="form-status" role="status" aria-live="polite"></p><button class="btn btn-red" type="submit">Submit to ZEVON →</button></form></div></div></section></main>
+<script src="assets/site.js"></script><script src="assets/zevon-api.js"></script><script src="assets/photo-enhance.js"></script>
 </body></html>

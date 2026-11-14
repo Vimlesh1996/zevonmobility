@@ -1,5 +1,5 @@
 /* ZEVON MOBILITY — shared site script (header/footer, data, renderers) */
-const CFG={wa:'917503303350',phone:'+91 96484 96425',mail:'info@zevonmobility.com',site:'zevonmobility.com',bookingEndpoint:'https://script.google.com/macros/s/AKfycbzlXJuFReuz1ywj4_KORsBMM7fSs_k5zb4euNA-5pOLEMGF9Pq2Bz3pkcspSs0AxhIx/exec'}; // Existing ZEVON Google Apps Script Web App endpoint.
+const CFG={wa:'917503303350',phone:'+91 96484 96425',mail:'info@zevonmobility.com',site:'zevonmobility.com'}; // Confirm these contact details before launch.
 const D={
 sol:[
 {id:'corporate',ic:'🏢',t:'Corporate Mobility & ETS',s:'Employee transportation, scheduled commute, dedicated vehicles, airport transfers and managed mobility programmes for organisations.',f:['Employee pickup and drop programmes','Dedicated or pooled vehicle deployment','Shift-wise route and trip coordination','Service-level and reporting arrangements']},
@@ -79,13 +79,13 @@ const PRICING={confirmed:false,
  notes:['Fares shown are indicative; the final fare is confirmed when you book.','Tolls, parking and state taxes are extra where applicable.','Distance or hours beyond the package are charged at the standard rate.','For EV journeys, charging requirements and stops must be checked for the specific vehicle and route.','Route not listed? Ask for a custom quote on WhatsApp.']};
 const $=(s,r=document)=>r.querySelector(s),$$=(s,r=document)=>[...r.querySelectorAll(s)];
 const reduce=matchMedia('(prefers-reduced-motion:reduce)').matches;
-const here=(location.pathname.split('/').pop()||'index.html').replace('solution.html','solutions.html').replace('insight.html','insights.html').replace('book.html','fares.html');
-const NAV=[['index.html','Home'],['solutions.html','Services'],['corporate.html','Corporate'],['vehicles.html','Vehicles'],['fares.html','Book / Fares'],['industries.html','Industries'],['partner.html','Partner'],['about.html','About'],['contact.html','Contact']];
+const here=(location.pathname.split('/').pop()||'index.html').replace('solution.html','solutions.html').replace('insight.html','insights.html');
+const NAV=[['index.html','Home'],['solutions.html','Services'],['corporate.html','Corporate'],['vehicles.html','Vehicles'],['book.html','Book a Ride'],['industries.html','Industries'],['partner.html','Partner'],['about.html','About'],['contact.html','Contact']];
 const logo='<a href="index.html" class="logo"><i></i><span><b>ZEVON</b><small>MOBILITY</small></span></a>';
 
 document.body.insertAdjacentHTML('afterbegin',`<div class="prog" id="prog"></div><header id="hd"><div class="wrap hd">${logo}
 <nav class="menu" id="menu">${NAV.map(([h,t])=>`<a href="${h}"${h===here?' class="on" aria-current="page"':''}>${t}</a>`).join('')}</nav>
-<div class="hd-cta"><button class="sbtn" id="sbtn" aria-label="Search (Ctrl+K)">🔍</button><a href="contact.html" class="btn btn-red">Get a Quote</a><button class="burger" aria-label="Menu" aria-expanded="false"><span></span><span></span><span></span></button></div></div></header>`);
+<div class="hd-cta"><button class="sbtn" id="sbtn" aria-label="Search (Ctrl+K)">🔍</button><a href="book.html" class="btn btn-red">Book a Ride</a><button class="burger" aria-label="Menu" aria-expanded="false"><span></span><span></span><span></span></button></div></div></header>`);
 document.body.insertAdjacentHTML('beforeend',`<footer><div class="wrap"><div class="ft">
 <div>${logo}<p style="margin-top:18px;max-width:320px">Complete mobility and transportation solutions for businesses, travellers and partners. Smart. Reliable. Sustainable. Always ON.</p></div>
 <div><h5>Solutions</h5><ul>${D.sol.map(s=>`<li><a href="solution.html?s=${s.id}">${s.t}</a></li>`).join('')}</ul></div>
@@ -179,22 +179,12 @@ R.results=el=>{const q=Object.fromEntries(new URLSearchParams(location.search));
   if(!L||!L.length){el.innerHTML=head+`<p class="empty">We don’t have a standard fare for this route or vehicle preference yet. Our team will check availability and quote it for you.</p><div style="text-align:center">${custom}</div>`;return}
   el.innerHTML=head+`<div class="fl">${L.map((x,i)=>`<div class="fc" data-i="${i}"><div class="fi"><div class="vi">${x.v.ic}</div><div><h3>${x.v.n}</h3><small>${x.v.category} · ${x.v.fuel.join(' / ')} · ${x.v.seat} · ${x.v.bag}</small><p>${x.note}</p></div></div>
   <div class="fp"><b>${inr(x.p)}</b><small>sample fare — not a live offer</small><button class="btn btn-red" data-b="1">Book now</button></div>
-  <form class="fbk" hidden><div class="fg"><div><label>Full name *</label><input name="name" required autocomplete="name"></div><div><label>Phone *</label><input name="phone" type="tel" required autocomplete="tel"></div><div><label>Email</label><input name="email" type="email" autocomplete="email"></div><div><label>Company</label><input name="company" autocomplete="organization"></div><div><label>Passengers *</label><input name="passengers" type="number" min="1" max="60" value="1" required></div><div class="full"><label>Pickup address</label><input name="addr" value="${q.addr||q.from||q.city||''}" autocomplete="street-address"></div><div class="full"><label>Additional requirements</label><input name="notes" placeholder="Luggage, child seat, special request..."></div><div hidden><label>Website</label><input name="website" tabindex="-1" autocomplete="off"></div></div>
-  <div class="row"><button type="submit" class="btn btn-red" data-via="sheet">Submit enquiry</button><button type="submit" class="btn btn-out" data-via="wa">WhatsApp</button><button type="submit" class="btn btn-out" data-via="mail">Email</button></div><p class="bk-n" data-submit-status aria-live="polite"></p></form></div>`).join('')}</div>
+  <form class="fbk" hidden><div class="fg"><div><label>Full name *</label><input name="name" required autocomplete="name"></div><div><label>Phone *</label><input name="phone" type="tel" required autocomplete="tel"></div><div class="full"><label>Pickup address</label><input name="addr" value="${q.addr||''}" autocomplete="street-address"></div></div>
+  <div class="row"><button class="btn btn-red" data-via="wa">Confirm on WhatsApp</button><button class="btn btn-out" data-via="mail">Email</button></div></form></div>`).join('')}</div>
   <div class="notes"><h3>How pricing works</h3><ul class="ticks">${PRICING.notes.map(n=>`<li>${n}</li>`).join('')}</ul><div style="margin-top:24px">${custom}</div></div>`;
   el.onclick=e=>{const b=e.target.closest('[data-b]');if(!b)return;const fm=b.closest('.fc').querySelector('.fbk');fm.hidden=!fm.hidden;b.textContent=fm.hidden?'Book now':'Close'};
-  el.onsubmit=async e=>{e.preventDefault();const x=L[+e.target.closest('.fc').dataset.i],f=e.target.elements,via=e.submitter?.dataset.via||'sheet';
-    const message=`Hello ZEVON, I'd like to request a booking.\nService: ${T.t}\nTrip: ${title}\nDate/Time: ${when}\nVehicle: ${x.v.n}\nSample calculator amount (not a quote): ${inr(x.p)}\nName: ${f['name'].value}\nPhone: ${f['phone'].value}\nPickup address: ${f['addr'].value||'-'}`;
-    if(via==='wa'||via==='mail'){sendMsg(message,'Booking enquiry — '+title,via==='mail');return;}
-    const status=e.target.querySelector('[data-submit-status]'),btn=e.submitter;btn.disabled=true;status.textContent='Submitting your enquiry…';
-    const pickup=f['addr'].value||q.from||q.city||'To be confirmed';
-    const destination=q.to||(q.type==='airport'?(q.dir==='From airport'?'Airport pickup':'Airport drop'):(q.city||'To be confirmed'));
-    const payload={trip:T.t,pickup,destination,date:q.date||'',time:q.time||'',returnDate:q.rdate||'',returnTime:'',passengers:f['passengers'].value,vehicle:x.v.category||x.v.n,vehiclePreference:x.v.n,fuel:(x.v.fuel||[]).join(' / '),name:f['name'].value.trim(),phone:f['phone'].value.trim(),email:f['email'].value.trim(),company:f['company'].value.trim(),notes:`${f['notes'].value.trim()} | ${title} | Sample calculator amount (not a quote): ${inr(x.p)}`,website:f['website'].value};
-    if(!CFG.bookingEndpoint){status.textContent='Online enquiry is temporarily unavailable. Please use WhatsApp or Email.';btn.disabled=false;return;}
-    try{await fetch(CFG.bookingEndpoint,{method:'POST',mode:'no-cors',headers:{'Content-Type':'text/plain;charset=utf-8'},body:JSON.stringify(payload)});status.textContent='Your enquiry has been sent for processing. Our team will review availability and contact you with a quotation. This is not a confirmed booking.';e.target.reset();}
-    catch(err){status.textContent='Could not send the enquiry. Please try WhatsApp or Email.';}
-    finally{btn.disabled=false;}
-  }};
+  el.onsubmit=e=>{e.preventDefault();const x=L[+e.target.closest('.fc').dataset.i],f=e.target.elements;
+    sendMsg(`Hello ZEVON, I'd like to book.\nService: ${T.t}\nTrip: ${title}\nDate/Time: ${when}\nVehicle: ${x.v.n}\nSample calculator amount (not a quote): ${inr(x.p)}\nName: ${f['name'].value}\nPhone: ${f['phone'].value}\nPickup address: ${f['addr'].value||'-'}`,'Booking request — '+title,e.submitter.dataset.via==='mail')}};
 R.ins=el=>{el.className='cards';el.innerHTML=D.ins.map(a=>`<a class="card rv" href="insight.html?a=${a.id}"><span class="tg">${a.tag}</span><h3 style="margin-top:14px">${a.t}</h3><p>${a.s}</p><span class="more">Read · ${a.m} min →</span></a>`).join('')};
 R.insd=el=>{const a=D.ins.find(x=>x.id===new URLSearchParams(location.search).get('a'));
   if(!a){el.innerHTML='<div class="sh"><h2>Article not found</h2><a class="btn btn-red" href="insights.html">All insights</a></div>';return}
