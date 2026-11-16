@@ -1,21 +1,23 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
-<url><loc>https://zevonmobility.com/</loc><lastmod>2026-11-15</lastmod></url>
-<url><loc>https://zevonmobility.com/about.html</loc><lastmod>2026-11-15</lastmod></url>
-<url><loc>https://zevonmobility.com/airport.html</loc><lastmod>2026-11-15</lastmod></url>
-<url><loc>https://zevonmobility.com/book.html</loc><lastmod>2026-11-15</lastmod></url>
-<url><loc>https://zevonmobility.com/buses.html</loc><lastmod>2026-11-15</lastmod></url>
-<url><loc>https://zevonmobility.com/contact.html</loc><lastmod>2026-11-15</lastmod></url>
-<url><loc>https://zevonmobility.com/corporate.html</loc><lastmod>2026-11-15</lastmod></url>
-<url><loc>https://zevonmobility.com/ev.html</loc><lastmod>2026-11-15</lastmod></url>
-<url><loc>https://zevonmobility.com/fares.html</loc><lastmod>2026-11-15</lastmod></url>
-<url><loc>https://zevonmobility.com/fleet.html</loc><lastmod>2026-11-15</lastmod></url>
-<url><loc>https://zevonmobility.com/industries.html</loc><lastmod>2026-11-15</lastmod></url>
-<url><loc>https://zevonmobility.com/insights.html</loc><lastmod>2026-11-15</lastmod></url>
-<url><loc>https://zevonmobility.com/partner.html</loc><lastmod>2026-11-15</lastmod></url>
-<url><loc>https://zevonmobility.com/rentals.html</loc><lastmod>2026-11-15</lastmod></url>
-<url><loc>https://zevonmobility.com/solutions.html</loc><lastmod>2026-11-15</lastmod></url>
-<url><loc>https://zevonmobility.com/vehicles.html</loc><lastmod>2026-11-15</lastmod></url>
-<url><loc>https://zevonmobility.com/privacy-policy.html</loc><lastmod>2026-11-15</lastmod></url>
-<url><loc>https://zevonmobility.com/terms.html</loc><lastmod>2026-11-15</lastmod></url>
+  <url><loc>https://zevonmobility.com/</loc></url>
+  <url><loc>https://zevonmobility.com/about/</loc></url>
+  <url><loc>https://zevonmobility.com/airport/</loc></url>
+  <url><loc>https://zevonmobility.com/book/</loc></url>
+  <url><loc>https://zevonmobility.com/buses/</loc></url>
+  <url><loc>https://zevonmobility.com/contact/</loc></url>
+  <url><loc>https://zevonmobility.com/corporate/</loc></url>
+  <url><loc>https://zevonmobility.com/ev/</loc></url>
+  <url><loc>https://zevonmobility.com/fares/</loc></url>
+  <url><loc>https://zevonmobility.com/fleet/</loc></url>
+  <url><loc>https://zevonmobility.com/industries/</loc></url>
+  <url><loc>https://zevonmobility.com/insight/</loc></url>
+  <url><loc>https://zevonmobility.com/insights/</loc></url>
+  <url><loc>https://zevonmobility.com/partner/</loc></url>
+  <url><loc>https://zevonmobility.com/privacy-policy/</loc></url>
+  <url><loc>https://zevonmobility.com/rentals/</loc></url>
+  <url><loc>https://zevonmobility.com/solution/</loc></url>
+  <url><loc>https://zevonmobility.com/solutions/</loc></url>
+  <url><loc>https://zevonmobility.com/terms/</loc></url>
+  <url><loc>https://zevonmobility.com/vehicles/</loc></url>
 </urlset>

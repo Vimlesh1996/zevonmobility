@@ -79,17 +79,17 @@ const PRICING={confirmed:false,
  notes:['Fares shown are indicative; the final fare is confirmed when you book.','Tolls, parking and state taxes are extra where applicable.','Distance or hours beyond the package are charged at the standard rate.','For EV journeys, charging requirements and stops must be checked for the specific vehicle and route.','Route not listed? Ask for a custom quote on WhatsApp.']};
 const $=(s,r=document)=>r.querySelector(s),$$=(s,r=document)=>[...r.querySelectorAll(s)];
 const reduce=matchMedia('(prefers-reduced-motion:reduce)').matches;
-const here=(location.pathname.split('/').pop()||'index.html').replace('solution.html','solutions.html').replace('insight.html','insights.html');
-const NAV=[['index.html','Home'],['solutions.html','Services'],['corporate.html','Corporate'],['vehicles.html','Vehicles'],['industries.html','Industries'],['partner.html','Partner'],['about.html','About'],['contact.html','Contact']];
-const logo='<a href="index.html" class="logo"><i></i><span><b>ZEVON</b><small>MOBILITY</small></span></a>';
+const here=(location.pathname.split('/').pop()||'/').replace('/solution/','/solutions/').replace('/insight/','/insights/');
+const NAV=[['/','Home'],['/solutions/','Services'],['/corporate/','Corporate'],['/vehicles/','Vehicles'],['/industries/','Industries'],['/partner/','Partner'],['/about/','About'],['/contact/','Contact']];
+const logo='<a href="/" class="logo"><i></i><span><b>ZEVON</b><small>MOBILITY</small></span></a>';
 
 document.body.insertAdjacentHTML('afterbegin',`<div class="prog" id="prog"></div><header id="hd"><div class="wrap hd">${logo}
 <nav class="menu" id="menu">${NAV.map(([h,t])=>`<a href="${h}"${h===here?' class="on" aria-current="page"':''}>${t}</a>`).join('')}</nav>
-<div class="hd-cta"><button class="sbtn" id="sbtn" aria-label="Search (Ctrl+K)"><svg class="zi" viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="m21 21-5-5"/></svg></button><a class="phone-pill" href="tel:${CFG.phone.replace(/\s/g,'')}"><svg class="zi" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 4h4l2 5-2.5 1.5a11 11 0 0 0 5 5L15 13l5 2v4a2 2 0 0 1-2 2A16 16 0 0 1 3 6a2 2 0 0 1 2-2z"/></svg>${CFG.phone}</a><a href="book.html" class="btn btn-red"><svg class="zi" viewBox="0 0 24 24" aria-hidden="true"><rect x="4" y="5" width="16" height="15" rx="2"/><path d="M4 10h16M9 3v4M15 3v4"/></svg> Book a Ride</a><button class="burger" aria-label="Menu" aria-expanded="false"><span></span><span></span><span></span></button></div></div></header>`);
+<div class="hd-cta"><button class="sbtn" id="sbtn" aria-label="Search (Ctrl+K)"><svg class="zi" viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="m21 21-5-5"/></svg></button><a class="phone-pill" href="tel:${CFG.phone.replace(/\s/g,'')}"><svg class="zi" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 4h4l2 5-2.5 1.5a11 11 0 0 0 5 5L15 13l5 2v4a2 2 0 0 1-2 2A16 16 0 0 1 3 6a2 2 0 0 1 2-2z"/></svg>${CFG.phone}</a><a href="/book/" class="btn btn-red"><svg class="zi" viewBox="0 0 24 24" aria-hidden="true"><rect x="4" y="5" width="16" height="15" rx="2"/><path d="M4 10h16M9 3v4M15 3v4"/></svg> Book a Ride</a><button class="burger" aria-label="Menu" aria-expanded="false"><span></span><span></span><span></span></button></div></div></header>`);
 document.body.insertAdjacentHTML('beforeend',`<footer><div class="wrap"><div class="ft">
 <div>${logo}<p style="margin-top:18px;max-width:320px">Complete mobility and transportation solutions for businesses, travellers and partners. Smart. Reliable. Sustainable. Always ON.</p></div>
-<div><h5>Solutions</h5><ul>${D.sol.map(s=>`<li><a href="solution.html?s=${s.id}">${s.t}</a></li>`).join('')}</ul></div>
-<div><h5>Company</h5><ul>${NAV.map(([h,t])=>`<li><a href="${h}">${t}</a></li>`).join('')}<li><a href="insights.html">Insights</a></li><li><a href="privacy-policy.html">Privacy Policy</a></li><li><a href="terms.html">Terms &amp; Conditions</a></li></ul></div>
+<div><h5>Solutions</h5><ul>${D.sol.map(s=>`<li><a href="/solution/?s=${s.id}">${s.t}</a></li>`).join('')}</ul></div>
+<div><h5>Company</h5><ul>${NAV.map(([h,t])=>`<li><a href="${h}">${t}</a></li>`).join('')}<li><a href="/insights/">Insights</a></li><li><a href="/privacy-policy/">Privacy Policy</a></li><li><a href="/terms/">Terms &amp; Conditions</a></li></ul></div>
 <div><h5>Contact</h5><ul><li>${CFG.mail}</li><li>${CFG.phone}</li><li>${CFG.site}</li><li><a href="https://wa.me/${CFG.wa}">WhatsApp</a> &nbsp;·&nbsp; <a href="mailto:${CFG.mail}">Email</a></li></ul></div></div>
 <div class="fb"><div>© ${new Date().getFullYear()} ZEVON MOBILITY. All rights reserved.</div><div>Smart Mobility. <b>Always ON.</b></div></div></div></footer>
 <a class="wa" href="https://wa.me/${CFG.wa}" aria-label="Chat on WhatsApp"><svg class="zi" viewBox="0 0 24 24" aria-hidden="true"><path d="M21 12a8 8 0 0 1-11.5 7.2L4 21l1.8-5A8 8 0 1 1 21 12z"/></svg> <span>Chat on WhatsApp</span></a>
@@ -97,11 +97,11 @@ document.body.insertAdjacentHTML('beforeend',`<footer><div class="wrap"><div cla
 
 const card=(x,extra='')=>`<div class="card rv"><div class="ic">${x.ic}</div><h3>${x.t}</h3><p>${x.s}</p>${extra}</div>`;
 const R={
-sol:el=>{el.className='cards';el.innerHTML=D.sol.map(s=>`<a class="card rv" href="solution.html?s=${s.id}"><div class="ic">${s.ic}</div><h3>${s.t}</h3><p>${s.s}</p><span class="more">Explore solution →</span></a>`).join('')},
+sol:el=>{el.className='cards';el.innerHTML=D.sol.map(s=>`<a class="card rv" href="/solution/?s=${s.id}"><div class="ic">${s.ic}</div><h3>${s.t}</h3><p>${s.s}</p><span class="more">Explore solution →</span></a>`).join('')},
 why:el=>{el.className='cards';el.style.gridTemplateColumns='repeat(2,1fr)';el.innerHTML=D.why.map(x=>card(x)).join('')},
 vis:el=>{el.className='cards';el.innerHTML=D.vis.map(x=>card(x)).join('')},
 ind:el=>{const full=el.dataset.full,tg=full?'div':'a';el.className='cards';
-  el.innerHTML=D.ind.map(x=>`<${tg} class="card ind rv" id="${x.id}"${full?'':` href="industries.html#${x.id}"`}><div class="ic">${x.ic}</div><small>${x.tag}</small><h3>${x.t}</h3><p>${x.s}</p>${full?`<div class="chips">${x.sol.map(i=>`<a href="solution.html?s=${i}">${D.sol.find(z=>z.id===i).t}</a>`).join('')}</div>`:'<span class="more">See solutions →</span>'}</${tg}>`).join('')},
+  el.innerHTML=D.ind.map(x=>`<${tg} class="card ind rv" id="${x.id}"${full?'':` href="/industries/#${x.id}"`}><div class="ic">${x.ic}</div><small>${x.tag}</small><h3>${x.t}</h3><p>${x.s}</p>${full?`<div class="chips">${x.sol.map(i=>`<a href="/solution/?s=${i}">${D.sol.find(z=>z.id===i).t}</a>`).join('')}</div>`:'<span class="more">See solutions →</span>'}</${tg}>`).join('')},
 steps:el=>{let i=0;el.className='flow rv';
   el.innerHTML=`<div class="flow-list">${D.steps.map((s,k)=>`<button data-k="${k}"><span>${s.ic}</span>${s.t}</button>`).join('')}</div><div class="flow-panel"><div class="fp-ic"></div><small></small><h3></h3><p></p><div class="bar"><i></i></div></div>`;
   const set=k=>{i=k;$$('button',el).forEach((b,j)=>b.classList.toggle('on',j===k));const s=D.steps[k];$('.fp-ic',el).innerHTML=s.ic;$('small',el).textContent=`Step ${k+1} of ${D.steps.length}`;$('h3',el).textContent=s.t;$('p',el).textContent=s.s;const b=$('.bar i',el);b.style.animation='none';b.offsetWidth;b.style.animation=''};
@@ -111,13 +111,13 @@ faq:el=>{el.innerHTML='<h3>Frequently asked questions</h3>'+D.faq.map(([q,a])=>`
 opts:el=>{el.innerHTML='<option value="">Select a service...</option>'+(el.dataset.list==='partner'?PARTNER:[...D.sol.map(s=>s.t),'Partnership / Investment']).map(t=>`<option>${t}</option>`).join('');
   const v=new URLSearchParams(location.search).get('service');if(v&&[...el.options].some(o=>o.value===v))el.value=v},
 detail:el=>{const id=new URLSearchParams(location.search).get('s'),k=D.sol.findIndex(s=>s.id===id);
-  if(k<0){el.innerHTML='<div class="sh"><h2>Solution not found</h2><p>Choose one from our solutions list.</p><a class="btn btn-red" href="solutions.html">View all solutions</a></div>';return}
+  if(k<0){el.innerHTML='<div class="sh"><h2>Solution not found</h2><p>Choose one from our solutions list.</p><a class="btn btn-red" href="/solutions/">View all solutions</a></div>';return}
   const s=D.sol[k],p=D.sol[(k+5)%6],n=D.sol[(k+1)%6],rel=D.ind.filter(x=>x.sol.includes(s.id));
   document.title=`${s.t} — ZEVON MOBILITY`;$('#dt').textContent=s.t;$('#dl').textContent=s.s;$('#dc').textContent=s.t;
   el.innerHTML=`<div class="sd"><div><h2>What you get</h2><ul class="ticks">${s.f.map(f=>`<li>${f}</li>`).join('')}</ul>
-  <h3 style="margin:36px 0 0">Who it's for</h3><div class="chips">${rel.map(x=>`<a href="industries.html#${x.id}">${x.ic} ${x.t}</a>`).join('')}</div>
-  <div class="pn"><a href="solution.html?s=${p.id}">← ${p.t}</a><a href="solution.html?s=${n.id}">${n.t} →</a></div></div>
-  <aside class="side card"><div class="ic">${s.ic}</div><h3>Interested in ${s.t}?</h3><p>Tell us your requirement and our team will respond within 24 hours.</p><a class="btn btn-red" style="width:100%;margin-top:18px" href="contact.html?service=${encodeURIComponent(s.t)}">Request this solution</a></aside></div>`}};
+  <h3 style="margin:36px 0 0">Who it's for</h3><div class="chips">${rel.map(x=>`<a href="/industries/#${x.id}">${x.ic} ${x.t}</a>`).join('')}</div>
+  <div class="pn"><a href="/solution/?s=${p.id}">← ${p.t}</a><a href="/solution/?s=${n.id}">${n.t} →</a></div></div>
+  <aside class="side card"><div class="ic">${s.ic}</div><h3>Interested in ${s.t}?</h3><p>Tell us your requirement and our team will respond within 24 hours.</p><a class="btn btn-red" style="width:100%;margin-top:18px" href="/contact/?service=${encodeURIComponent(s.t)}">Request this solution</a></aside></div>`}};
 
 const inr=n=>'₹'+Math.round(n).toLocaleString('en-IN'),rnd=n=>Math.round(n/10)*10;
 const addDays=n=>new Date(Date.now()+n*864e5).toISOString().slice(0,10),today=()=>addDays(0),tmr=()=>addDays(1);
@@ -126,7 +126,7 @@ const cityList=[...new Set(PRICING.routes.flatMap(r=>[r[0],r[1]]))].sort();
 const dests=f=>PRICING.routes.filter(r=>r[0]===f||r[1]===f).map(r=>r[0]===f?r[1]:r[0]);
 const kmOf=(a,b)=>{const r=PRICING.routes.find(r=>(r[0]===a&&r[1]===b)||(r[0]===b&&r[1]===a));return r?r[2]:0};
 const dayDiff=(a,b)=>Math.max(1,Math.round((new Date(b)-new Date(a))/864e5)+1);
-const qs=o=>'book.html?'+new URLSearchParams(o);
+const qs=o=>'/book/?'+new URLSearchParams(o);
 function fares(q){const t=q.type,km=kmOf(q.from,q.to),k=PRICING.pk[+q.pkg||0];
   if((t==='airport'&&!PRICING.airport[q.city])||(t==='hourly'&&!k)||((t==='oneway'||t==='round')&&!km))return null;
   return PRICING.vehicles.filter(v=>(!q.vehicle||q.vehicle==='any'||v.category===q.vehicle)&&(!q.fuel||q.fuel==='any'||v.fuel.includes(q.fuel))).map(v=>{let p,note;
@@ -145,7 +145,7 @@ R.air=el=>{el.className='rcs';el.innerHTML=aCards()};
 R.hourly=el=>{el.className='rcs';el.innerHTML=hCards(+el.dataset.n)};
 R.notes=el=>{el.innerHTML=`<h3>How pricing works ${smp()}</h3><ul class="ticks">${PRICING.notes.map(n=>`<li>${n}</li>`).join('')}</ul>`};
 R.pop=el=>{const n=+el.dataset.n||6,T=[['Outstation',()=>rCards(n)],['Airport',aCards],['Hourly Rental',()=>hCards(n)]];
-  el.innerHTML=`<div class="pop-t">${T.map((t,i)=>`<button data-i="${i}">${t[0]}</button>`).join('')}</div><div class="rcs"></div><div class="cta"><a class="btn btn-red" href="fares.html">View all fares →</a></div>`;
+  el.innerHTML=`<div class="pop-t">${T.map((t,i)=>`<button data-i="${i}">${t[0]}</button>`).join('')}</div><div class="rcs"></div><div class="cta"><a class="btn btn-red" href="/fares/">View all fares →</a></div>`;
   const g=$('.rcs',el),draw=i=>{$$('.pop-t button',el).forEach((b,j)=>b.classList.toggle('on',j===i));g.innerHTML=T[i][1]()};
   el.onclick=e=>{const b=e.target.closest('.pop-t button');if(b)draw(+b.dataset.i)};draw(0)};
 const FD={sel:(f,v)=>`<select name="${f.n}">${f.o.map(o=>{const a=Array.isArray(o)?o:[o,o];return `<option value="${a[0]}"${String(v)===String(a[0])?' selected':''}>${a[1]}</option>`}).join('')}</select>`,
@@ -185,11 +185,11 @@ R.results=el=>{const q=Object.fromEntries(new URLSearchParams(location.search));
   el.onclick=e=>{const b=e.target.closest('[data-b]');if(!b)return;const fm=b.closest('.fc').querySelector('.fbk');fm.hidden=!fm.hidden;b.textContent=fm.hidden?'Book now':'Close'};
   el.onsubmit=e=>{e.preventDefault();const x=L[+e.target.closest('.fc').dataset.i],f=e.target.elements;
     sendMsg(`Hello ZEVON, I'd like to book.\nService: ${T.t}\nTrip: ${title}\nDate/Time: ${when}\nVehicle: ${x.v.n}\nSample calculator amount (not a quote): ${inr(x.p)}\nName: ${f['name'].value}\nPhone: ${f['phone'].value}\nPickup address: ${f['addr'].value||'-'}`,'Booking request — '+title,e.submitter.dataset.via==='mail')}};
-R.ins=el=>{el.className='cards';el.innerHTML=D.ins.map(a=>`<a class="card rv" href="insight.html?a=${a.id}"><span class="tg">${a.tag}</span><h3 style="margin-top:14px">${a.t}</h3><p>${a.s}</p><span class="more">Read · ${a.m} min →</span></a>`).join('')};
+R.ins=el=>{el.className='cards';el.innerHTML=D.ins.map(a=>`<a class="card rv" href="/insight/?a=${a.id}"><span class="tg">${a.tag}</span><h3 style="margin-top:14px">${a.t}</h3><p>${a.s}</p><span class="more">Read · ${a.m} min →</span></a>`).join('')};
 R.insd=el=>{const a=D.ins.find(x=>x.id===new URLSearchParams(location.search).get('a'));
-  if(!a){el.innerHTML='<div class="sh"><h2>Article not found</h2><a class="btn btn-red" href="insights.html">All insights</a></div>';return}
+  if(!a){el.innerHTML='<div class="sh"><h2>Article not found</h2><a class="btn btn-red" href="/insights/">All insights</a></div>';return}
   document.title=a.t+' — ZEVON MOBILITY';$('#dt').textContent=a.t;$('#dl').textContent=a.s;$('#dc').textContent=a.tag;
-  el.innerHTML=`<article class="art">${a.b.map(p=>`<p>${p}</p>`).join('')}<div class="cband" style="border-radius:20px;padding:40px;margin-top:40px"><h2 style="font-size:26px">Plan your EV mobility with ZEVON</h2><p>Share your requirement and get a tailored quote.</p><a class="btn" href="contact.html">Talk to our team →</a></div></article>`};
+  el.innerHTML=`<article class="art">${a.b.map(p=>`<p>${p}</p>`).join('')}<div class="cband" style="border-radius:20px;padding:40px;margin-top:40px"><h2 style="font-size:26px">Plan your EV mobility with ZEVON</h2><p>Share your requirement and get a tailored quote.</p><a class="btn" href="/contact/">Talk to our team →</a></div></article>`};
 R.reviews=el=>{if(!D.reviews.length){el.remove();return}$('.rg',el).innerHTML=D.reviews.map(r=>`<div class="card rv"><p>“${r.q}”</p><h4 style="margin-top:16px">${r.n}</h4><small>${r.r||''}</small></div>`).join('')};
 function sendMsg(t,subj,mail){if(mail)location.href=`mailto:${CFG.mail}?subject=${encodeURIComponent(subj)}&body=${encodeURIComponent(t)}`;else open(`https://wa.me/${CFG.wa}?text=${encodeURIComponent(t)}`,'_blank','noopener');toast(mail?'Your email app is opening — press send.':'WhatsApp is opening — press send.')}
 $$('[data-r]').forEach(el=>R[el.dataset.r](el));
@@ -220,10 +220,10 @@ function enquiry(e){e.preventDefault();const f=e.target,v=n=>f.elements[n].value
   toast(mail?'Your email app is opening — press send.':'WhatsApp is opening — press send.');f.reset()}
 
 /* mobile action bar, WhatsApp links, search palette (Ctrl/Cmd+K) */
-document.body.insertAdjacentHTML('beforeend',`<nav class="mbar" aria-label="Quick actions"><a href="tel:${CFG.phone.replace(/\s/g,'')}"><svg class="zi" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 4h4l2 5-2.5 1.5a11 11 0 0 0 5 5L15 13l5 2v4a2 2 0 0 1-2 2A16 16 0 0 1 3 6a2 2 0 0 1 2-2z"/></svg> Call</a><a data-wa="Hello ZEVON, I'd like to know more."><svg class="zi" viewBox="0 0 24 24" aria-hidden="true"><path d="M21 12a8 8 0 0 1-11.5 7.2L4 21l1.8-5A8 8 0 1 1 21 12z"/></svg> WhatsApp</a><a href="contact.html" class="q">Get Quote</a></nav>
+document.body.insertAdjacentHTML('beforeend',`<nav class="mbar" aria-label="Quick actions"><a href="tel:${CFG.phone.replace(/\s/g,'')}"><svg class="zi" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 4h4l2 5-2.5 1.5a11 11 0 0 0 5 5L15 13l5 2v4a2 2 0 0 1-2 2A16 16 0 0 1 3 6a2 2 0 0 1 2-2z"/></svg> Call</a><a data-wa="Hello ZEVON, I'd like to know more."><svg class="zi" viewBox="0 0 24 24" aria-hidden="true"><path d="M21 12a8 8 0 0 1-11.5 7.2L4 21l1.8-5A8 8 0 1 1 21 12z"/></svg> WhatsApp</a><a href="/contact/" class="q">Get Quote</a></nav>
 <div class="srch" id="srch" hidden><div class="sbox" role="dialog" aria-label="Search"><input id="sq" placeholder="Search solutions, industries, insights, FAQs…" autocomplete="off"><ul id="sr"></ul><small>Esc to close · Enter opens the first result</small></div></div>`);
 $$('[data-wa]').forEach(a=>{a.href=`https://wa.me/${CFG.wa}?text=${encodeURIComponent(a.dataset.wa)}`;a.target='_blank';a.rel='noopener'});
-const IDX=[...PRICING.routes.map(([a,b])=>({t:`${a} to ${b} car rental`,h:qs({type:'oneway',from:a,to:b,date:tmr(),time:'09:00'}),k:'Fare'})),{t:'Fares & booking',h:'fares.html',k:'Page',x:'airport transfer outstation hourly rental price'},...NAV.map(([h,t])=>({t,h,k:'Page'})),...D.sol.map(s=>({t:s.t,h:'solution.html?s='+s.id,k:'Solution',x:s.s})),...D.ind.map(s=>({t:s.t,h:'industries.html#'+s.id,k:'Industry',x:s.s})),...D.ins.map(s=>({t:s.t,h:'insight.html?a='+s.id,k:'Insight',x:s.s})),...D.faq.map(([q,a])=>({t:q,h:'contact.html',k:'FAQ',x:a}))];
+const IDX=[...PRICING.routes.map(([a,b])=>({t:`${a} to ${b} car rental`,h:qs({type:'oneway',from:a,to:b,date:tmr(),time:'09:00'}),k:'Fare'})),{t:'Fares & booking',h:'/fares/',k:'Page',x:'airport transfer outstation hourly rental price'},...NAV.map(([h,t])=>({t,h,k:'Page'})),...D.sol.map(s=>({t:s.t,h:'/solution/?s='+s.id,k:'Solution',x:s.s})),...D.ind.map(s=>({t:s.t,h:'/industries/#'+s.id,k:'Industry',x:s.s})),...D.ins.map(s=>({t:s.t,h:'/insight/?a='+s.id,k:'Insight',x:s.s})),...D.faq.map(([q,a])=>({t:q,h:'/contact/',k:'FAQ',x:a}))];
 const sm=$('#srch'),sq=$('#sq'),sr=$('#sr');
 const sFind=()=>{const q=sq.value.trim().toLowerCase(),r=(q?IDX.filter(i=>(i.t+' '+(i.x||'')).toLowerCase().includes(q)):IDX.slice(0,8)).slice(0,8);
   sr.innerHTML=r.length?r.map(i=>`<li><a href="${i.h}"><b>${i.t}</b><span>${i.k}</span></a></li>`).join(''):'<li class="none">No results — try “airport” or “fleet”.</li>'};
@@ -232,5 +232,5 @@ $('#sbtn').onclick=sOpen;sq.oninput=sFind;sm.onclick=e=>{if(e.target===sm)sClose
 addEventListener('keydown',e=>{if((e.ctrlKey||e.metaKey)&&e.key.toLowerCase()==='k'){e.preventDefault();sOpen()}else if(e.key==='Escape')sClose();else if(e.key==='Enter'&&!sm.hidden){const a=$('#sr a');if(a)location.href=a.href}});
 
 /* Services dropdown (desktop hover/focus) */
-(()=>{const a=document.querySelector('.menu a[href="solutions.html"]');if(!a)return;const w=document.createElement('div');w.className='dd';a.replaceWith(w);w.appendChild(a);
- w.insertAdjacentHTML('beforeend','<div class="dd-m">'+[['airport.html','Airport Transfers'],['corporate.html','Corporate Mobility'],['rentals.html','Car Rentals &amp; Chauffeur'],['buses.html','Bus &amp; Coach'],['fleet.html','Fleet Solutions'],['ev.html','EV &amp; Sustainable Mobility'],['solutions.html','All Services']].map(([h,t])=>`<a href="${h}">${t}</a>`).join('')+'</div>')})();
+(()=>{const a=document.querySelector('.menu a[href="/solutions/"]');if(!a)return;const w=document.createElement('div');w.className='dd';a.replaceWith(w);w.appendChild(a);
+ w.insertAdjacentHTML('beforeend','<div class="dd-m">'+[['/airport/','Airport Transfers'],['/corporate/','Corporate Mobility'],['/rentals/','Car Rentals &amp; Chauffeur'],['/buses/','Bus &amp; Coach'],['/fleet/','Fleet Solutions'],['/ev/','EV &amp; Sustainable Mobility'],['/solutions/','All Services']].map(([h,t])=>`<a href="${h}">${t}</a>`).join('')+'</div>')})();
