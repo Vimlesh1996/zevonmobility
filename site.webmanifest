@@ -1,0 +1,16 @@
+{
+  "name": "ZEVON Mobility",
+  "short_name": "ZEVON",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#10264a",
+  "theme_color": "#10264a",
+  "icons": [
+    {
+      "src": "/assets/images/zevon-app-icon.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ]
+}

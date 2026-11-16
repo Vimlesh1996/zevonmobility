@@ -79,9 +79,10 @@ const PRICING={confirmed:false,
  notes:['Fares shown are indicative; the final fare is confirmed when you book.','Tolls, parking and state taxes are extra where applicable.','Distance or hours beyond the package are charged at the standard rate.','For EV journeys, charging requirements and stops must be checked for the specific vehicle and route.','Route not listed? Ask for a custom quote on WhatsApp.']};
 const $=(s,r=document)=>r.querySelector(s),$$=(s,r=document)=>[...r.querySelectorAll(s)];
 const reduce=matchMedia('(prefers-reduced-motion:reduce)').matches;
-const here=(location.pathname.split('/').pop()||'/').replace('/solution/','/solutions/').replace('/insight/','/insights/');
+const rawPath=(location.pathname.replace(/\/+$/,'')||'/');
+const here=rawPath==='/solution/'?'/solutions/':rawPath==='/insight/'?'/insights/':rawPath;
 const NAV=[['/','Home'],['/solutions/','Services'],['/corporate/','Corporate'],['/vehicles/','Vehicles'],['/industries/','Industries'],['/partner/','Partner'],['/about/','About'],['/contact/','Contact']];
-const logo='<a href="/" class="logo"><i></i><span><b>ZEVON</b><small>MOBILITY</small></span></a>';
+const logo='<a href="/" class="logo"><span class="z-mark" aria-hidden="true"><svg viewBox="0 0 64 64"><path d="M13 15h39l-4.6 10H32.6l18.2 18.8V49H12l4.8-10h17.8L13 21.5z" fill="currentColor"/><path d="M19 19h25L18 44h27" fill="none" stroke="#fff" stroke-width="4.4" stroke-linecap="square" stroke-linejoin="miter"/></svg></span><span><b>ZEVON</b><small>MOBILITY</small></span></a>';
 
 document.body.insertAdjacentHTML('afterbegin',`<div class="prog" id="prog"></div><header id="hd"><div class="wrap hd">${logo}
 <nav class="menu" id="menu">${NAV.map(([h,t])=>`<a href="${h}"${h===here?' class="on" aria-current="page"':''}>${t}</a>`).join('')}</nav>
