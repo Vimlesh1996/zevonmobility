@@ -6,7 +6,32 @@
 </style></head><body><div class="wrap">
 <div class="top"><div><div class="brand">ZEVON MOBILITY</div><div class="tag">DRIVER PORTAL · STAGING</div></div>
 <? if (ok) { ?><button id="logout" class="btn secondary">Sign out</button><? } ?></div>
-<? if (!ok) { ?><section class="panel"><h2>Sign-in not completed</h2><p id="status" class="error"><?= message ?></p><p class="small">STAGING ONLY · No customer booking data · No production system connection</p></section><? } else { ?>
+<? if (!ok) { ?><section class="panel"><h2>Sign-in not completed</h2><p id="status" class="error"><?= message ?></p><p class="small">STAGING ONLY · No customer booking data · No production system connection</p></section><? } else if (accountType === 'ADMIN') { ?>
+<section class="panel"><div class="muted">ADMIN CONSOLE · STAGING</div><h2><?= driverName ?></h2><div class="muted">Admin ID: <?= driverId ?> · <?= driverEmail ?></div><p id="adminStatus" class="muted">Loading admin workspace…</p></section>
+<section class="panel"><h3>Create driver assignment</h3><form id="assignForm">
+<label>Active driver</label><select id="driverSelect" required style="width:100%;padding:11px;margin:6px 0 12px;border:1px solid #ccd8d0;border-radius:8px"></select>
+<label>Staging booking reference</label><input id="bookingId" required placeholder="STAGE-BOOKING-002">
+<label>Trip date</label><input id="tripDate" type="date" required>
+<label>Pickup time</label><input id="pickupTime" type="time" required>
+<label>Pickup location</label><input id="pickup" required placeholder="STAGING PICKUP">
+<label>Drop location</label><input id="drop" required placeholder="STAGING DROP">
+<label>Passenger count</label><input id="passengers" type="number" min="1" max="99" value="1" required>
+<label>Vehicle display</label><input id="vehicle" value="Staging vehicle">
+<label>Notes</label><textarea id="notes" rows="2" maxlength="300"></textarea>
+<button class="btn" id="assignButton" type="submit">Assign trip</button>
+</form></section>
+<section class="panel"><h3>Staging assignments</h3><div id="adminTrips"></div></section>
+<p class="small">STAGING ONLY · Synthetic assignments only · No production booking data</p>
+<script>
+const token = <?!= JSON.stringify(sessionToken) ?>;
+const $ = id => document.getElementById(id);
+function adminStatus(s,err){$('adminStatus').textContent=s;$('adminStatus').className=err?'error':'muted';}
+function loadAdmin(){google.script.run.withSuccessHandler(d=>{const sel=$('driverSelect');sel.replaceChildren();d.drivers.forEach(x=>{const o=document.createElement('option');o.value=x.driverId;o.textContent=x.name+' ('+x.driverId+')';sel.append(o);});const box=$('adminTrips');box.replaceChildren();if(!d.trips.length){box.textContent='No staging assignments yet.';}d.trips.forEach(t=>{const el=document.createElement('div');el.className='trip';const b=document.createElement('b');b.textContent=t.assignmentId+' · '+t.status;el.append(b);const p=document.createElement('p');p.textContent=t.driverId+' · '+t.tripDate+' '+t.pickupTime+' · '+t.pickupLocation+' → '+t.dropLocation;el.append(p);box.append(el);});adminStatus('Admin access verified. '+d.drivers.length+' active driver(s), '+d.trips.length+' assignment(s).');}).withFailureHandler(e=>adminStatus(e.message||'Could not load admin workspace.',true)).getAdminPortalData(token);}
+$('assignForm').addEventListener('submit',e=>{e.preventDefault();const btn=$('assignButton');btn.disabled=true;const p={driverId:$('driverSelect').value,bookingId:$('bookingId').value,tripDate:$('tripDate').value,pickupTime:$('pickupTime').value,pickupLocation:$('pickup').value,dropLocation:$('drop').value,passengerCount:$('passengers').value,vehicleDisplay:$('vehicle').value,notes:$('notes').value};google.script.run.withSuccessHandler(r=>{btn.disabled=false;adminStatus('Assignment created: '+r.assignmentId);$('assignForm').reset();$('passengers').value=1;$('vehicle').value='Staging vehicle';loadAdmin();}).withFailureHandler(err=>{btn.disabled=false;adminStatus(err.message||'Assignment failed.',true);}).createDriverAssignment(token,p);});
+$('logout').addEventListener('click',function(){this.disabled=true;google.script.run.withSuccessHandler(()=>location.reload()).withFailureHandler(e=>{this.disabled=false;adminStatus(e.message||'Sign-out failed.',true);}).logoutDriver(token);});
+loadAdmin();
+</script>
+<? } else { ?>
 <section class="panel"><div class="muted">WELCOME BACK</div><h2 id="driverName"><?= driverName ?></h2><div class="muted">Driver ID: <span id="driverId"><?= driverId ?></span> · <span id="driverEmail">Loading profile…</span></div><div id="status" class="muted" style="margin-top:10px">Loading your staging dashboard…</div></section>
 <div class="nav"><button class="active" data-view="dashboard">Dashboard</button><button data-view="trips">My Trips</button><button data-view="history">Trip History</button><button data-view="profile">Profile</button></div>
 <section id="dashboard" class="view"><div class="grid">
