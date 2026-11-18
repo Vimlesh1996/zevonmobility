@@ -13,6 +13,8 @@ const bookingJs = fs.readFileSync(
   path.join(__dirname, '..', 'assets', 'booking.js'),
   'utf8'
 );
+const appsScriptPath = process.env.ZEVON_APPS_SCRIPT_PATH ||
+  path.join(__dirname, '..', 'apps-script', 'Code.gs');
 
 function serverRoundTripDistance(oneWayKm, trip) {
   const km = Math.max(0, Number(oneWayKm) || 0);
@@ -42,4 +44,13 @@ test('round-trip route kilometres are not multiplied by the number of travel day
 test('invalid or negative route distances safely resolve to zero', () => {
   assert.equal(serverRoundTripDistance(undefined, 'Outstation Round-Trip'), 0);
   assert.equal(serverRoundTripDistance(-5, 'Outstation Round-Trip'), 0);
+});
+
+test('Apps Script fare engine doubles one-way route distance once (when source is supplied)', {
+  skip: !fs.existsSync(appsScriptPath) && 'Apps Script source is maintained outside this repository'
+}, () => {
+  const appsScript = fs.readFileSync(appsScriptPath, 'utf8');
+  assert.match(appsScript, /const billableRouteKm\s*=\s*isRound\s*\?\s*mapKm\s*\*\s*2\s*:\s*mapKm/);
+  assert.match(appsScript, /do not multiply route km\\s*by duration/i);
+  assert.match(appsScript, /const includedKmForTrip\s*=\s*inKm\s*\*\s*kmAllowanceUnits/);
 });
