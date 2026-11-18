@@ -1,36 +1,52 @@
-# ZEVON Driver Authentication — Google Apps Script staging prototype
+# ZEVON Driver Authentication — Google Apps Script OAuth2 staging
 
-This is an isolated staging prototype. It does not modify or call the existing ZEVON production Apps Script, production spreadsheet, booking endpoint, or live website.
+This isolated prototype uses the Google-maintained Apps Script OAuth2 library and authorization-code flow. It does not call or modify the production Apps Script, production spreadsheet, booking API, or live website.
 
-## Files
-- Code.gs — staging-only Google identity check, driver allowlist, session hash, profile and logout.
-- Index.html — standalone Google Sign-In test page.
+## Prerequisites
+- A separate, private, empty staging spreadsheet.
+- Apps Script project bound to that staging spreadsheet.
+- OAuth2 library added with identifier OAuth2. Library Script ID: 1B7FSrk5Zi6L1rSxxTDgDEUsPzlukDsi4KGuTMorsTQHhGBzBkMun4iDF.
+- Script Properties:
+  - ZEVON_OAUTH_CLIENT_ID — public Web OAuth client ID.
+  - ZEVON_OAUTH_CLIENT_SECRET — secret; never commit or share.
+- OAuth client's authorized redirect URI: https://script.google.com/macros/d/<SCRIPT_ID>/usercallback.
 
-## Important verification limitation
-The staging prototype calls Google's \`oauth2.googleapis.com/tokeninfo\` endpoint from Apps Script and checks issuer, audience, expiry and verified email. Google documents tokeninfo as a debugging/testing endpoint, not the recommended production verification mechanism. Therefore this implementation is for a controlled staging proof-of-concept only. Do not put real drivers or production access behind it. Before production, replace this verifier with a supported cryptographic ID-token verification service/library or a Google identity architecture with a supported server-side verification path.
+## How the flow works
+1. Apps Script creates a random one-time flow ID and a uniquely named OAuth2 service.
+2. The browser is sent to Google's OAuth authorization page using the Apps Script /usercallback redirect.
+3. Apps Script OAuth2 library completes the authorization-code callback.
+4. The server calls Google's OpenID Connect userinfo endpoint using the short-lived access token and checks sub, email, and email_verified.
+5. The OAuth token is reset immediately. No OAuth refresh token is requested or retained.
+6. Verified email is matched against an active row in the private Drivers tab.
+7. A random app session token is issued; only its SHA-256 hash is stored in Driver_Sessions.
+8. A unique OAuth2 service name per flow prevents concurrent drivers from overwriting each other's temporary OAuth properties. The flow ID expires after 10 minutes.
 
-## Setup — separate staging only
-1. Create a brand-new blank Google Spreadsheet named \`ZEVON Driver Auth — STAGING\`. Do not copy or select the production workbook.
-2. In that new sheet, open Extensions → Apps Script.
-3. Replace the editor's Code.gs with this folder's Code.gs. Add an HTML file named \`Index\` and paste Index.html.
-4. Save. Run \`setupDriverAuthStaging\` once from the editor and authorize it. This creates only Drivers, Driver_Sessions and Driver_Audit tabs in the new staging sheet.
-5. In Drivers, add one test row:
-   - Driver_ID: DRV-STAGE-001
-   - Display_Name: Staging Test Driver
-   - Email: the exact Google account email used for testing
-   - Active: TRUE
-   - Created_At / Updated_At: current date/time
-6. In Google Auth Platform → Audience, add that Google account under Test users. Keep app in Testing mode.
-7. Deploy → New deployment → Web app. Execute as: Me. Access: Anyone. Copy the /exec URL and open it in a browser.
-8. If Google Sign-In reports an origin/JavaScript-origin error, inspect the actual origin shown by the browser and add that exact HTTPS origin in Google Auth Platform → Clients for this OAuth client. Do not guess wildcard origins.
-9. Test an approved test account, then an unapproved test account. The approved account should receive a session and see its test Driver ID; unapproved account must be denied.
-10. Keep the staging sheet private. Only the Apps Script owner/admin should have access.
+## Important deployment model
+Deploy the web app as Execute as: Me and Who has access: Anyone only for controlled staging, if the account policy allows it. The backend must never trust a driver ID supplied by the browser; it derives the driver from Google's verified email and the active allowlist. Keep the staging spreadsheet private. Keep the OAuth consent screen in Testing mode and add test users.
 
-## Current scope
-This is an identity + allowlist + session smoke test only. It does not read trips, assignments, customer records, or the production workbook. It does not yet provide a GitHub Pages handoff, driver trip APIs, admin driver-management UI, or production-grade token verification.
+## Setup
+1. In the separate staging spreadsheet, open Extensions → Apps Script.
+2. Replace Code.gs with this folder's Code.gs.
+3. Replace Index.html with this folder's Index.html.
+4. Add a new HTML file named Callback and paste Callback.html.
+5. Confirm the OAuth2 library is present with identifier OAuth2.
+6. In Project Settings → Script Properties, confirm ZEVON_OAUTH_CLIENT_ID and ZEVON_OAUTH_CLIENT_SECRET exist. Do not reveal their values.
+7. Run setupDriverAuthStaging once from the editor, if not already run. It adds only the auth tabs to the bound staging spreadsheet.
+8. Run logDriverAuthRedirectUri and check the execution log matches the redirect URI registered in Google Cloud.
+9. Add a test row to Drivers: Driver_ID=DRV-STAGE-001, Display_Name=Staging Test Driver, Email=<test account email>, Active=TRUE, timestamps as appropriate.
+10. Keep OAuth Audience in Testing mode and add that account under Test users.
+11. Deploy → New deployment → Web app. Execute as: Me. Access: Anyone. Open the new /exec URL.
+12. Test an approved account and an unapproved test account. Approved should receive a staging session; unapproved must be denied.
 
-## Session handling
-Only a SHA-256 hash of the random session token is stored in the staging sheet. The raw token is held in the current page's JavaScript memory. Sessions expire after four hours. Logout revokes the matching hash. Driver active status is checked again when the profile is requested.
+## Tabs
+- Drivers: Driver_ID, Display_Name, Email, Active, Created_At, Updated_At
+- Driver_Sessions: Token_Hash, Driver_ID, Google_Sub, Created_At, Expires_At, Revoked_At
+- Driver_Audit: Audit_ID, Driver_ID, Event_Type, Event_At, Detail
 
-## Operational note
-Apps Script quotas and execution limits apply. This is a low-volume staging test, not a guaranteed high-availability backend.
+## Security and scope
+- OAuth access token is used only to fetch Google userinfo and is immediately reset.
+- No OAuth refresh token is requested (access_type=online).
+- App session token is 32 bytes of random UUID material; only its SHA-256 hash is stored.
+- Session lifetime is four hours; driver active status is checked on profile reads.
+- This is a staging identity proof-of-concept, not a production driver trip API. No trips, assignments, status changes, customer data, or production spreadsheet access are included.
+- Apps Script quotas, execution limits, and OAuth app user limits apply. Monitor before any real rollout.
