@@ -1,0 +1,13 @@
+name = "zevon-driver-auth-staging"
+main = "src/index.js"
+compatibility_date = "2026-11-18"
+workers_dev = true
+[vars]
+GOOGLE_CLIENT_ID = "700434717568-3uhka3n6hhmc60er1vmi7ml1mlfq9cek.apps.googleusercontent.com"
+ALLOWED_ORIGIN = "https://vimlesh1996.github.io"
+SESSION_TTL_SECONDS = "14400"
+[[d1_databases]]
+binding = "DB"
+database_name = "zevon-driver-auth-staging"
+database_id = "REPLACE_WITH_D1_DATABASE_ID"
+migrations_dir = "migrations"
