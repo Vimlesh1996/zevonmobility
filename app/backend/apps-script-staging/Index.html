@@ -30,7 +30,7 @@
   <p class="small">STAGING ONLY · No customer booking data · No production system connection</p>
 </main>
 <script>
-  const CLIENT_ID = <?= JSON.stringify(clientId) ?>;
+  const CLIENT_ID = <?!= JSON.stringify(clientId) ?>;
   let sessionToken = null;
   const statusEl = document.getElementById('status');
   function status(message){ statusEl.textContent = message; }
