@@ -62,21 +62,16 @@ function checkDriverAuthConfig() {
 }
 
 function logDriverAuthRedirectUri() {
-  const flowId = randomHex_(16);
-  const uri = createOAuthService_(flowId).getRedirectUri();
+  const uri = createOAuthService_().getRedirectUri();
   Logger.log(uri);
   return uri;
 }
 
 function createGoogleAuthorizationUrl_() {
-  const flowId = randomHex_(16);
-  CacheService.getScriptCache().put('zevon_driver_oauth_flow_' + flowId, 'pending', DRIVER_AUTH.FLOW_SECONDS);
-  const url = createOAuthService_(flowId).getAuthorizationUrl();
-  return url + '&flowId=' + encodeURIComponent(flowId);
+  return createOAuthService_().getAuthorizationUrl();
 }
 
-function createOAuthService_(flowId) {
-  if (!/^[a-f0-9]{32}$/.test(String(flowId || ''))) throw new Error('Invalid login flow.');
+function createOAuthService_() {
   const props = PropertiesService.getScriptProperties();
   const clientId = props.getProperty('ZEVON_OAUTH_CLIENT_ID');
   const clientSecret = props.getProperty('ZEVON_OAUTH_CLIENT_SECRET');
@@ -98,15 +93,7 @@ function createOAuthService_(flowId) {
 }
 
 function authCallback(request) {
-  const flowId = request && request.parameter ? String(request.parameter.flowId || '') : '';
-  const cache = CacheService.getScriptCache();
-  const flowKey = 'zevon_driver_oauth_flow_' + flowId;
-  if (!/^[a-f0-9]{32}$/.test(flowId) || cache.get(flowKey) !== 'pending') {
-    return renderCallback_({ok:false, message:'This login link has expired or is invalid. Return to the driver sign-in page and try again.'});
-  }
-  cache.remove(flowKey);
-
-  const service = createOAuthService_(flowId);
+  const service = createOAuthService_();
   let identity;
   try {
     if (!service.handleCallback(request)) {
