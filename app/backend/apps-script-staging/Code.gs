@@ -78,7 +78,7 @@ function createOAuthService_() {
   if (!clientId || !clientSecret) throw new Error('OAuth configuration is incomplete. Check Script Properties.');
   if (typeof OAuth2 === 'undefined') throw new Error('OAuth2 library is not available. Add the Google OAuth2 library first.');
 
-  return OAuth2.createService('ZEVON_DRIVER_' + flowId)
+  return OAuth2.createService('ZEVON_DRIVER')
     .setAuthorizationBaseUrl('https://accounts.google.com/o/oauth2/v2/auth')
     .setTokenUrl('https://oauth2.googleapis.com/token')
     .setClientId(clientId)
