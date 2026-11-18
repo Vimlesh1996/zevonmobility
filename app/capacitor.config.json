@@ -1,0 +1,8 @@
+{
+  "appId": "com.zevon.mobility",
+  "appName": "ZEVON Mobility",
+  "webDir": "www",
+  "android": {
+    "allowMixedContent": false
+  }
+}
