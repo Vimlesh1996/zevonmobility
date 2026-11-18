@@ -152,6 +152,8 @@ function renderCallback_(data) {
   template.message = String(data.message || '');
   template.driverName = String(data.driverName || '');
   template.driverId = String(data.driverId || '');
+  template.accountType = String(data.accountType || 'DRIVER');
+  template.driverEmail = String(data.driverEmail || '');
   template.sessionToken = String(data.sessionToken || '');
   template.expiresAt = String(data.expiresAt || '');
   return template.evaluate().setTitle('ZEVON Driver Sign-In — Staging');
