@@ -1,0 +1,11 @@
+{
+  "name": "ZEVON Mobility",
+  "short_name": "ZEVON",
+  "description": "ZEVON Mobility customer trip enquiry app",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "background_color": "#0b1714",
+  "theme_color": "#0b1714",
+  "icons": []
+}
