@@ -6,7 +6,8 @@
 const DRIVER_AUTH = {
   TABS: {
     Drivers: ['Driver_ID','Display_Name','Email','Active','Created_At','Updated_At'],
-    Driver_Sessions: ['Token_Hash','Driver_ID','Google_Sub','Created_At','Expires_At','Revoked_At'],
+    Admins: ['Admin_ID','Display_Name','Email','Active','Created_At','Updated_At'],
+    Driver_Sessions: ['Token_Hash','Driver_ID','Google_Sub','Created_At','Expires_At','Revoked_At','Account_Type','Admin_ID'],
     Driver_Audit: ['Audit_ID','Driver_ID','Event_Type','Event_At','Detail'],
     Trip_Assignments: ['Assignment_ID','Booking_ID','Driver_ID','Trip_Date','Pickup_Time','Pickup_Location','Drop_Location','Passenger_Count','Vehicle_Display','Trip_Status','Assigned_At','Accepted_At','Started_At','Completed_At','Rejected_At','Rejection_Reason','Notes'],
     Trip_Events: ['Event_ID','Assignment_ID','Driver_ID','Event_Type','Event_At','Reason','Actor']
@@ -128,12 +129,14 @@ function authCallback(request) {
   }
 
   try {
-    const result = createDriverSession_(identity);
+    const result = createAccountSession_(identity);
     return renderCallback_({
       ok:true,
       message:'Google sign-in successful. This staging account is approved.',
-      driverName:result.driver.displayName,
-      driverId:result.driver.driverId,
+      driverName:result.account.displayName,
+      driverId:result.account.id,
+      accountType:result.account.type,
+      driverEmail:identity.email,
       sessionToken:result.sessionToken,
       expiresAt:result.expiresAt
     });
@@ -154,37 +157,31 @@ function renderCallback_(data) {
   return template.evaluate().setTitle('ZEVON Driver Sign-In — Staging');
 }
 
-function createDriverSession_(identity) {
+function createAccountSession_(identity) {
   const lock = LockService.getScriptLock();
   lock.waitLock(10000);
   try {
     const cache = CacheService.getScriptCache();
     const attemptKey = 'zevon_login_attempts_' + sha256Hex_(identity.email);
     const attempts = Number(cache.get(attemptKey) || 0);
-    if (attempts >= DRIVER_AUTH.MAX_ATTEMPTS_PER_WINDOW) {
-      throw new Error('Too many login attempts. Please wait and try again.');
-    }
+    if (attempts >= DRIVER_AUTH.MAX_ATTEMPTS_PER_WINDOW) throw new Error('Too many login attempts. Please wait and try again.');
     cache.put(attemptKey, String(attempts + 1), DRIVER_AUTH.WINDOW_SECONDS);
 
-    const driver = sheetRows_('Drivers').find(row =>
-      String(row.Email || '').trim().toLowerCase() === identity.email && isActive_(row.Active)
-    );
-    if (!driver) throw new Error('This Google account is not approved for ZEVON Driver access. Contact Admin.');
+    const admin = sheetRows_('Admins').find(row => String(row.Email || '').trim().toLowerCase() === identity.email && isActive_(row.Active));
+    const driver = admin ? null : sheetRows_('Drivers').find(row => String(row.Email || '').trim().toLowerCase() === identity.email && isActive_(row.Active));
+    if (!admin && !driver) throw new Error('This Google account is not approved for ZEVON Driver or Admin access.');
 
-    const rawToken = randomHex_(32);
-    const now = new Date();
+    const type = admin ? 'ADMIN' : 'DRIVER';
+    const account = admin
+      ? {type:type,id:String(admin.Admin_ID),displayName:String(admin.Display_Name || identity.name || '')}
+      : {type:type,id:String(driver.Driver_ID),displayName:String(driver.Display_Name || identity.name || '')};
+    const rawToken = randomHex_(32), now = new Date();
     const expires = new Date(now.getTime() + DRIVER_AUTH.SESSION_SECONDS * 1000);
     stagingSpreadsheet_().getSheetByName('Driver_Sessions')
-      .appendRow([sha256Hex_(rawToken), String(driver.Driver_ID), identity.sub, now, expires, '']);
-    appendAudit_(String(driver.Driver_ID), 'SESSION_CREATED', 'Google OAuth2 Sign-In staging session');
-    return {
-      sessionToken:rawToken,
-      expiresAt:expires.toISOString(),
-      driver:{driverId:String(driver.Driver_ID),displayName:String(driver.Display_Name || identity.name || '')}
-    };
-  } finally {
-    lock.releaseLock();
-  }
+      .appendRow([sha256Hex_(rawToken), driver ? String(driver.Driver_ID) : '', identity.sub, now, expires, '', type, admin ? String(admin.Admin_ID) : '']);
+    appendAudit_(account.id, type + '_SESSION_CREATED', 'Google OAuth2 staging sign-in');
+    return {sessionToken:rawToken,expiresAt:expires.toISOString(),account:account};
+  } finally { lock.releaseLock(); }
 }
 
 function stagingSpreadsheet_() {
@@ -214,6 +211,56 @@ function appendAudit_(driverId, eventType, detail) {
 
 function appendAuditSafe_(driverId, eventType, detail) {
   try { appendAudit_(driverId, eventType, detail); } catch (ignored) {}
+}
+
+
+function getSessionAccount_(sessionToken) {
+  if (typeof sessionToken !== 'string' || sessionToken.length !== 64) throw new Error('Please sign in again.');
+  const hash = sha256Hex_(sessionToken), now = new Date();
+  const session = sheetRows_('Driver_Sessions').find(row => row.Token_Hash === hash && !row.Revoked_At && new Date(row.Expires_At).getTime() > now.getTime());
+  if (!session) throw new Error('Your session has expired. Please sign in again.');
+  const type = String(session.Account_Type || 'DRIVER').toUpperCase();
+  if (type === 'ADMIN') {
+    const admin = sheetRows_('Admins').find(row => String(row.Admin_ID) === String(session.Admin_ID) && isActive_(row.Active));
+    if (!admin) throw new Error('Admin access is inactive.');
+    return {type:'ADMIN',id:String(admin.Admin_ID),displayName:String(admin.Display_Name || ''),email:String(admin.Email || '')};
+  }
+  const driver = sheetRows_('Drivers').find(row => String(row.Driver_ID) === String(session.Driver_ID) && isActive_(row.Active));
+  if (!driver) throw new Error('Driver access is inactive.');
+  return {type:'DRIVER',id:String(driver.Driver_ID),displayName:String(driver.Display_Name || ''),email:String(driver.Email || '')};
+}
+
+function getAdminPortalData(sessionToken) {
+  const admin = getSessionAccount_(sessionToken);
+  if (admin.type !== 'ADMIN') throw new Error('Admin permission required.');
+  const drivers = sheetRows_('Drivers').filter(r=>isActive_(r.Active)).map(r=>({driverId:String(r.Driver_ID),name:String(r.Display_Name || ''),email:String(r.Email || '')}));
+  const trips = sheetRows_('Trip_Assignments').map(r=>({assignmentId:String(r.Assignment_ID||''),bookingId:String(r.Booking_ID||''),driverId:String(r.Driver_ID||''),tripDate:formatPortalDate_(r.Trip_Date),pickupTime:formatPortalTime_(r.Pickup_Time),pickupLocation:String(r.Pickup_Location||''),dropLocation:String(r.Drop_Location||''),status:String(r.Trip_Status||'ASSIGNED').toUpperCase()}));
+  return {ok:true,admin:admin,drivers:drivers,trips:trips};
+}
+
+function createDriverAssignment(sessionToken, payload) {
+  const admin = getSessionAccount_(sessionToken);
+  if (admin.type !== 'ADMIN') throw new Error('Admin permission required.');
+  payload = payload || {};
+  const driverId=String(payload.driverId||'').trim(), bookingId=String(payload.bookingId||'').trim();
+  const date=String(payload.tripDate||'').trim(), time=String(payload.pickupTime||'').trim();
+  const pickup=String(payload.pickupLocation||'').trim(), drop=String(payload.dropLocation||'').trim();
+  const passengers=Math.max(1,Math.min(99,Number(payload.passengerCount)||1));
+  if(!driverId||!bookingId||!/^\d{4}-\d{2}-\d{2}$/.test(date)||!/^([01]\d|2[0-3]):[0-5]\d$/.test(time)||!pickup||!drop) throw new Error('Please complete all required trip fields.');
+  const driver=sheetRows_('Drivers').find(r=>String(r.Driver_ID)===driverId&&isActive_(r.Active));
+  if(!driver) throw new Error('Select an active driver.');
+  const lock=LockService.getScriptLock();lock.waitLock(10000);
+  try{
+    const sh=stagingSpreadsheet_().getSheetByName('Trip_Assignments');
+    const id='STG-'+Utilities.getUuid().slice(0,8).toUpperCase(), now=new Date();
+    const dateParts=date.split('-').map(Number), tripDate=new Date(dateParts[0],dateParts[1]-1,dateParts[2]);
+    const row={Assignment_ID:id,Booking_ID:bookingId,Driver_ID:driverId,Trip_Date:tripDate,Pickup_Time:time,Pickup_Location:pickup,Drop_Location:drop,Passenger_Count:passengers,Vehicle_Display:String(payload.vehicleDisplay||'Staging vehicle'),Trip_Status:'ASSIGNED',Assigned_At:now,Accepted_At:'',Started_At:'',Completed_At:'',Rejected_At:'',Rejection_Reason:'',Notes:String(payload.notes||'').slice(0,300)};
+    const headers=sh.getRange(1,1,1,sh.getLastColumn()).getDisplayValues()[0];
+    sh.appendRow(headers.map(h=>row[h]===undefined?'':row[h]));
+    stagingSpreadsheet_().getSheetByName('Trip_Events').appendRow([Utilities.getUuid(),id,driverId,'TRIP_ASSIGNED',now,'','ADMIN']);
+    appendAudit_(admin.id,'TRIP_ASSIGNED','Assignment '+id+' created for '+driverId);
+    return {ok:true,assignmentId:id};
+  }finally{lock.releaseLock();}
 }
 
 function getMyDriverProfile(sessionToken) {
