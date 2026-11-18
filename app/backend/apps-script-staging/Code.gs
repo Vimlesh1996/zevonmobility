@@ -241,7 +241,7 @@ function getDriverPortalData(sessionToken) {
       assignmentId:String(r.Assignment_ID || ''),
       bookingId:String(r.Booking_ID || ''),
       tripDate:formatPortalDate_(r.Trip_Date),
-      pickupTime:String(r.Pickup_Time || ''),
+      pickupTime:formatPortalTime_(r.Pickup_Time),
       pickupLocation:String(r.Pickup_Location || ''),
       dropLocation:String(r.Drop_Location || ''),
       passengerCount:String(r.Passenger_Count || ''),
@@ -296,6 +296,15 @@ function updateDriverTripStatus(sessionToken, assignmentId, action, reason) {
   } finally {
     lock.releaseLock();
   }
+}
+
+function formatPortalTime_(value) {
+  if (value instanceof Date && !isNaN(value.getTime())) return Utilities.formatDate(value, Session.getScriptTimeZone(), 'HH:mm');
+  if (typeof value === 'number' && isFinite(value)) {
+    const minutes = Math.round(value * 24 * 60);
+    return ('0' + Math.floor(minutes / 60) % 24).slice(-2) + ':' + ('0' + minutes % 60).slice(-2);
+  }
+  return String(value || '');
 }
 
 function formatPortalDate_(value) {
