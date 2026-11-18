@@ -1,52 +1,60 @@
-# ZEVON Driver Authentication — Google Apps Script OAuth2 staging
+# ZEVON Driver Portal — isolated staging
 
-This isolated prototype uses the Google-maintained Apps Script OAuth2 library and authorization-code flow. It does not call or modify the production Apps Script, production spreadsheet, booking API, or live website.
+This project is bound only to a separate staging spreadsheet. It does not call the production Apps Script, production spreadsheet, booking API, or live website.
+
+## Staging features
+- Google OAuth sign-in with verified Google email and active Drivers allowlist.
+- Four-hour app sessions; only SHA-256 session-token hashes are stored.
+- Driver dashboard, profile, active trips, trip history and summary counts.
+- Server-side filtering by the authenticated Driver_ID.
+- Driver trip transitions: ASSIGNED → ACCEPTED → STARTED → COMPLETED; ASSIGNED → REJECTED requires a reason.
+- Trip events and driver audit records.
 
 ## Prerequisites
-- A separate, private, empty staging spreadsheet.
-- Apps Script project bound to that staging spreadsheet.
-- OAuth2 library added with identifier OAuth2. Library Script ID: 1B7FSrk5Zi6L1rSxxTDgDEUsPzlukDsi4KGuTMorsTQHhGBzBkMun4iDF.
-- Script Properties:
-  - ZEVON_OAUTH_CLIENT_ID — public Web OAuth client ID.
-  - ZEVON_OAUTH_CLIENT_SECRET — secret; never commit or share.
-- OAuth client's authorized redirect URI: https://script.google.com/macros/d/<SCRIPT_ID>/usercallback.
+- Separate private staging spreadsheet and bound Apps Script project.
+- Google OAuth2 library identifier `OAuth2`, library ID `1B7FSrk5Zi6L1rSxxTDgDEUsPzlukDsi4KGuTMorsTQHhGBzBkMun4iDF`.
+- Script Properties `ZEVON_OAUTH_CLIENT_ID` and `ZEVON_OAUTH_CLIENT_SECRET`. Never share or commit the secret.
+- OAuth redirect URI must exactly match `logDriverAuthRedirectUri()` output.
+- OAuth consent screen remains Testing; add only controlled test users.
 
-## How the flow works
-1. Apps Script creates a random one-time flow ID and a uniquely named OAuth2 service.
-2. The browser is sent to Google's OAuth authorization page using the Apps Script /usercallback redirect.
-3. Apps Script OAuth2 library completes the authorization-code callback.
-4. The server calls Google's OpenID Connect userinfo endpoint using the short-lived access token and checks sub, email, and email_verified.
-5. The OAuth token is reset immediately. No OAuth refresh token is requested or retained.
-6. Verified email is matched against an active row in the private Drivers tab.
-7. A random app session token is issued; only its SHA-256 hash is stored in Driver_Sessions.
-8. A unique OAuth2 service name per flow prevents concurrent drivers from overwriting each other's temporary OAuth properties. The flow ID expires after 10 minutes.
+## Install/update in Apps Script
+1. In the staging spreadsheet, open Extensions → Apps Script.
+2. Copy `Code.gs` from this folder into the Apps Script `Code.gs`.
+3. Copy `Index.html` into Apps Script HTML file `Index`.
+4. Copy `Callback.html` into Apps Script HTML file `Callback`.
+5. Confirm the OAuth2 library and Script Properties are present.
+6. Run `setupDriverAuthStaging` again. It adds the new staging tabs and missing headers without clearing existing rows.
+7. Confirm the tabs exist: Drivers, Driver_Sessions, Driver_Audit, Trip_Assignments, Trip_Events.
+8. Deploy → Manage deployments → Edit → New version → Deploy. This is staging only.
+9. Open the staging /exec URL and sign in using an approved test driver.
 
-## Important deployment model
-Deploy the web app as Execute as: Me and Who has access: Anyone only for controlled staging, if the account policy allows it. The backend must never trust a driver ID supplied by the browser; it derives the driver from Google's verified email and the active allowlist. Keep the staging spreadsheet private. Keep the OAuth consent screen in Testing mode and add test users.
+## Trip_Assignments schema
+`Assignment_ID, Booking_ID, Driver_ID, Trip_Date, Pickup_Time, Pickup_Location, Drop_Location, Passenger_Count, Vehicle_Display, Trip_Status, Assigned_At, Accepted_At, Started_At, Completed_At, Rejected_At, Rejection_Reason, Notes`
 
-## Setup
-1. In the separate staging spreadsheet, open Extensions → Apps Script.
-2. Replace Code.gs with this folder's Code.gs.
-3. Replace Index.html with this folder's Index.html.
-4. Add a new HTML file named Callback and paste Callback.html.
-5. Confirm the OAuth2 library is present with identifier OAuth2.
-6. In Project Settings → Script Properties, confirm ZEVON_OAUTH_CLIENT_ID and ZEVON_OAUTH_CLIENT_SECRET exist. Do not reveal their values.
-7. Run setupDriverAuthStaging once from the editor, if not already run. It adds only the auth tabs to the bound staging spreadsheet.
-8. Run logDriverAuthRedirectUri and check the execution log matches the redirect URI registered in Google Cloud.
-9. Add a test row to Drivers: Driver_ID=DRV-STAGE-001, Display_Name=Staging Test Driver, Email=<test account email>, Active=TRUE, timestamps as appropriate.
-10. Keep OAuth Audience in Testing mode and add that account under Test users.
-11. Deploy → New deployment → Web app. Execute as: Me. Access: Anyone. Open the new /exec URL.
-12. Test an approved account and an unapproved test account. Approved should receive a staging session; unapproved must be denied.
+Use only synthetic staging records for tests. Example row:
+- Assignment_ID: `STAGE-TRIP-001`
+- Booking_ID: `STAGE-BOOKING-001`
+- Driver_ID: `DRV-STAGE-001`
+- Trip_Date: a future test date
+- Pickup_Time: `10:00`
+- Pickup_Location: `STAGING PICKUP`
+- Drop_Location: `STAGING DROP`
+- Passenger_Count: `1`
+- Vehicle_Display: `Staging vehicle`
+- Trip_Status: `ASSIGNED`
+- Assigned_At: current date/time
+- Leave other event timestamps and Rejection_Reason blank.
+Do not put real passenger names, phone numbers, addresses, or production booking IDs in staging.
 
-## Tabs
-- Drivers: Driver_ID, Display_Name, Email, Active, Created_At, Updated_At
-- Driver_Sessions: Token_Hash, Driver_ID, Google_Sub, Created_At, Expires_At, Revoked_At
-- Driver_Audit: Audit_ID, Driver_ID, Event_Type, Event_At, Detail
+## Server-side rules
+- Driver ID is taken from the verified session, never from a browser-supplied driver ID.
+- Every trip read and mutation is filtered by that driver ID.
+- ACCEPT is allowed only from ASSIGNED.
+- REJECT is allowed only from ASSIGNED and requires a reason.
+- START is allowed only from ACCEPTED.
+- COMPLETE is allowed only from STARTED.
+- Every transition appends a Trip_Events row and Driver_Audit event.
+- The portal currently uses synthetic staging assignments only. It is not connected to customer bookings, production assignments, or live vehicle data.
 
-## Security and scope
-- OAuth access token is used only to fetch Google userinfo and is immediately reset.
-- No OAuth refresh token is requested (access_type=online).
-- App session token is 32 bytes of random UUID material; only its SHA-256 hash is stored.
-- Session lifetime is four hours; driver active status is checked on profile reads.
-- This is a staging identity proof-of-concept, not a production driver trip API. No trips, assignments, status changes, customer data, or production spreadsheet access are included.
-- Apps Script quotas, execution limits, and OAuth app user limits apply. Monitor before any real rollout.
+## Not production-ready
+This is a staging implementation, not a live dispatch system. Before any production rollout, require security review, role/admin assignment workflow, immutable assignment creation, concurrency and abuse testing, notification strategy, privacy review, operational acceptance, and explicit approval. Do not merge, deploy to production, or connect production data without explicit authorization.
