@@ -44,4 +44,4 @@ BEFORE DEPLOYMENT
 2. Confirm it appears in Bookings with Booking_Status = NEW.
 3. Confirm the admin dashboard counts update.
 4. Delete the test row after verification.
-5. Keep sample calculator prices clearly labelled as samples until approved commercial rates are entered.
+5. The booking page now requests one-way route kilometres from the browser. The Apps Script fare engine must apply the round-trip multiplier exactly once (2 × one-way km) and must not multiply route kilometres by trip days. Verify the deployed Apps Script implementation before production; its source is maintained outside this repository.\n6. Keep legacy sample fares in assets/site.js labelled as samples unless those separate website rates are commercially approved. The booking-page Google Sheets Rate_Card is a separate source of rates.
