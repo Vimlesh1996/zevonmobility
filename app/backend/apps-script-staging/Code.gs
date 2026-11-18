@@ -7,7 +7,9 @@ const DRIVER_AUTH = {
   TABS: {
     Drivers: ['Driver_ID','Display_Name','Email','Active','Created_At','Updated_At'],
     Driver_Sessions: ['Token_Hash','Driver_ID','Google_Sub','Created_At','Expires_At','Revoked_At'],
-    Driver_Audit: ['Audit_ID','Driver_ID','Event_Type','Event_At','Detail']
+    Driver_Audit: ['Audit_ID','Driver_ID','Event_Type','Event_At','Detail'],
+    Trip_Assignments: ['Assignment_ID','Booking_ID','Driver_ID','Trip_Date','Pickup_Time','Pickup_Location','Drop_Location','Passenger_Count','Vehicle_Display','Trip_Status','Assigned_At','Accepted_At','Started_At','Completed_At','Rejected_At','Rejection_Reason','Notes'],
+    Trip_Events: ['Event_ID','Assignment_ID','Driver_ID','Event_Type','Event_At','Reason','Actor']
   },
   SESSION_SECONDS: 4 * 60 * 60,
   FLOW_SECONDS: 10 * 60,
@@ -227,6 +229,78 @@ function getMyDriverProfile(sessionToken) {
   );
   if (!driver) throw new Error('Driver access is inactive. Contact Admin.');
   return {ok:true,driver:{driverId:String(driver.Driver_ID),displayName:String(driver.Display_Name || ''),email:String(driver.Email || '')}};
+}
+
+
+/** Driver portal: returns only assignments owned by the authenticated driver. */
+function getDriverPortalData(sessionToken) {
+  const profile = getMyDriverProfile(sessionToken);
+  const all = sheetRows_('Trip_Assignments');
+  const trips = all.filter(r => String(r.Driver_ID) === profile.driver.driverId)
+    .map(r => ({
+      assignmentId:String(r.Assignment_ID || ''),
+      bookingId:String(r.Booking_ID || ''),
+      tripDate:formatPortalDate_(r.Trip_Date),
+      pickupTime:String(r.Pickup_Time || ''),
+      pickupLocation:String(r.Pickup_Location || ''),
+      dropLocation:String(r.Drop_Location || ''),
+      passengerCount:String(r.Passenger_Count || ''),
+      vehicleDisplay:String(r.Vehicle_Display || ''),
+      status:String(r.Trip_Status || 'ASSIGNED').toUpperCase(),
+      notes:String(r.Notes || '')
+    })).sort((a,b) => (a.tripDate + a.pickupTime).localeCompare(b.tripDate + b.pickupTime));
+  const counts = {assigned:0,accepted:0,started:0,completed:0,rejected:0};
+  trips.forEach(t => { const k=t.status.toLowerCase(); if (counts[k] !== undefined) counts[k]++; });
+  return {ok:true,driver:profile.driver,counts:counts,trips:trips};
+}
+
+/** Driver may change only their own assignment and only through allowed transitions. */
+function updateDriverTripStatus(sessionToken, assignmentId, action, reason) {
+  const profile = getMyDriverProfile(sessionToken);
+  assignmentId = String(assignmentId || '').trim();
+  action = String(action || '').toUpperCase();
+  if (!assignmentId || assignmentId.length > 100) throw new Error('Invalid trip assignment.');
+  const transitions = {
+    ACCEPT: {from:'ASSIGNED',to:'ACCEPTED',event:'TRIP_ACCEPTED'},
+    REJECT: {from:'ASSIGNED',to:'REJECTED',event:'TRIP_REJECTED'},
+    START: {from:'ACCEPTED',to:'STARTED',event:'TRIP_STARTED'},
+    COMPLETE: {from:'STARTED',to:'COMPLETED',event:'TRIP_COMPLETED'}
+  };
+  const rule = transitions[action];
+  if (!rule) throw new Error('Unsupported trip action.');
+  reason = String(reason || '').trim().slice(0,300);
+  if (action === 'REJECT' && !reason) throw new Error('Please enter a reason for rejecting this trip.');
+
+  const lock = LockService.getScriptLock();
+  lock.waitLock(10000);
+  try {
+    const sh = stagingSpreadsheet_().getSheetByName('Trip_Assignments');
+    if (!sh || sh.getLastRow() < 2) throw new Error('Trip assignment not found.');
+    const data = sh.getDataRange().getValues();
+    const headers = data[0].map(String);
+    const idx = {}; headers.forEach((h,i)=>idx[h]=i);
+    const rowIndex = data.findIndex((row,i)=>i>0 && String(row[idx.Assignment_ID])===assignmentId && String(row[idx.Driver_ID])===profile.driver.driverId);
+    if (rowIndex < 1) throw new Error('Trip assignment not found for this driver.');
+    const row = data[rowIndex];
+    const current = String(row[idx.Trip_Status] || 'ASSIGNED').toUpperCase();
+    if (current !== rule.from) throw new Error('This action is not allowed from the current trip status: ' + current);
+    const now = new Date();
+    sh.getRange(rowIndex+1,idx.Trip_Status+1).setValue(rule.to);
+    const timestampColumn = {ACCEPT:'Accepted_At',START:'Started_At',COMPLETE:'Completed_At',REJECT:'Rejected_At'}[action];
+    if (idx[timestampColumn] !== undefined) sh.getRange(rowIndex+1,idx[timestampColumn]+1).setValue(now);
+    if (action === 'REJECT' && idx.Rejection_Reason !== undefined) sh.getRange(rowIndex+1,idx.Rejection_Reason+1).setValue(reason);
+    const eventSheet = stagingSpreadsheet_().getSheetByName('Trip_Events');
+    eventSheet.appendRow([Utilities.getUuid(),assignmentId,profile.driver.driverId,rule.event,now,reason,'DRIVER']);
+    appendAudit_(profile.driver.driverId,rule.event,'Assignment '+assignmentId+' changed from '+current+' to '+rule.to);
+    return {ok:true,status:rule.to};
+  } finally {
+    lock.releaseLock();
+  }
+}
+
+function formatPortalDate_(value) {
+  if (value instanceof Date && !isNaN(value.getTime())) return Utilities.formatDate(value, Session.getScriptTimeZone(), 'yyyy-MM-dd');
+  return String(value || '');
 }
 
 function logoutDriver(sessionToken) {
