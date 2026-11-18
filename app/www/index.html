@@ -1,0 +1,79 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+  <meta name="theme-color" content="#0b1714">
+  <meta name="description" content="Request a ZEVON ride or mobility quotation.">
+  <title>ZEVON Mobility — Move smarter</title>
+  <link rel="manifest" href="./manifest.webmanifest">
+  <link rel="icon" href="https://zevonmobility.com/favicon-32.png">
+  <link rel="stylesheet" href="./styles.css">
+</head>
+<body>
+  <div class="app-shell">
+    <header class="topbar">
+      <a class="brand" href="./" aria-label="ZEVON home"><span class="brand-mark">Z</span><span>ZEVON<small>MOBILITY</small></span></a>
+      <a class="site-link" href="https://zevonmobility.com/">Main website <span>↗</span></a>
+    </header>
+
+    <main>
+      <section class="hero">
+        <div class="eyebrow"><span class="pulse"></span> YOUR JOURNEY, OUR PRIORITY</div>
+        <h1>Move smarter.<br><em>Go with ZEVON.</em></h1>
+        <p>Airport transfers, outstation rides and corporate mobility — request your trip in a few simple steps.</p>
+        <div class="trust-row"><span>✓ Flexible vehicle options</span><span>✓ Enquiry-first booking</span></div>
+      </section>
+
+      <section class="booking-card" aria-labelledby="booking-title">
+        <div class="card-heading">
+          <div><div class="section-kicker">PLAN YOUR RIDE</div><h2 id="booking-title">Where can we take you?</h2></div>
+          <span class="step-pill">01 <i>/</i> 01</span>
+        </div>
+        <div class="trip-tabs" role="group" aria-label="Trip type">
+          <button class="trip-tab active" type="button" data-trip="Airport transfer">Airport</button>
+          <button class="trip-tab" type="button" data-trip="Outstation One-Way">One-way</button>
+          <button class="trip-tab" type="button" data-trip="Outstation Round-Trip">Round trip</button>
+          <button class="trip-tab" type="button" data-trip="Hourly Rental">Hourly</button>
+          <button class="trip-tab" type="button" data-trip="Daily Rental">Daily</button>
+          <button class="trip-tab" type="button" data-trip="Monthly Rental">Monthly</button>
+        </div>
+        <form id="booking-form">
+          <input type="hidden" name="trip" id="trip" value="Airport transfer">
+          <div class="field-grid">
+            <label class="field"><span>Pickup location</span><input name="pickup" id="pickup" required minlength="3" placeholder="Enter pickup city or address" autocomplete="street-address"></label>
+            <label class="field"><span>Drop location</span><input name="destination" id="destination" required minlength="3" placeholder="Where to?" autocomplete="street-address"></label>
+            <label class="field"><span>Travel date</span><input name="date" id="travel-date" type="date" required></label>
+            <label class="field"><span>Pickup time</span><input name="time" id="travel-time" type="time" required value="10:00"></label>
+            <label class="field"><span>Passengers</span><select name="passengers" id="passengers"><option>1</option><option>2</option><option>3</option><option>4</option><option>5</option><option>6</option><option>7</option><option>8</option><option>9</option><option>10+</option></select></label>
+            <label class="field"><span>Vehicle preference</span><select name="vehicle" id="vehicle"><option>Any suitable vehicle</option><option>Hatchback</option><option>Sedan</option><option>SUV / MUV</option><option>Premium / Luxury</option><option>Van / Traveller</option><option>Bus / Coach</option></select></label>
+            <label class="field"><span>Fuel preference</span><select name="fuel" id="fuel"><option value="">No preference</option><option>EV</option><option>Petrol</option><option>Diesel</option><option>CNG</option></select></label>
+            <label class="field"><span>Company (optional)</span><input name="company" placeholder="Company name"></label>
+          </div>
+          <div class="form-divider"><span>CONTACT DETAILS</span></div>
+          <div class="field-grid contact-grid">
+            <label class="field"><span>Your name</span><input name="name" required minlength="2" autocomplete="name" placeholder="Full name"></label>
+            <label class="field"><span>Mobile number</span><input name="phone" id="phone" required inputmode="tel" autocomplete="tel" placeholder="+91 98765 43210"></label>
+            <label class="field full"><span>Email (optional)</span><input name="email" type="email" autocomplete="email" placeholder="you@example.com"></label>
+            <label class="field full"><span>Additional requirements (optional)</span><textarea name="notes" rows="3" placeholder="Luggage, flight number, return details or anything we should know…"></textarea></label>
+          </div>
+          <button class="submit-btn" id="submit-btn" type="submit"><span>Send trip enquiry</span><b>→</b></button>
+          <p class="fine-print">This is an enquiry, not a confirmed booking. The ZEVON team will check availability and contact you with the next steps.</p>
+          <div id="form-status" class="form-status" role="status" aria-live="polite"></div>
+        </form>
+      </section>
+
+      <section class="how-it-works">
+        <div class="section-kicker">SIMPLE & TRANSPARENT</div><h2>How it works</h2>
+        <div class="steps">
+          <article><span>01</span><h3>Share your trip</h3><p>Enter route, date and vehicle preference.</p></article>
+          <article><span>02</span><h3>We check options</h3><p>Our team reviews availability and requirements.</p></article>
+          <article><span>03</span><h3>Get contacted</h3><p>We follow up with the quotation and confirmation process.</p></article>
+        </div>
+      </section>
+    </main>
+    <footer><span>© <span id="year"></span> ZEVON Mobility</span><span><a href="https://zevonmobility.com/privacy-policy/">Privacy</a> · <a href="https://zevonmobility.com/terms/">Terms</a></span></footer>
+  </div>
+  <script src="./app.js"></script>
+</body>
+</html>

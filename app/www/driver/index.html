@@ -1,0 +1,20 @@
+<!doctype html>
+<html lang="en">
+<head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="theme-color" content="#0b1714"><title>ZEVON Driver Portal</title><link rel="stylesheet" href="../modules.css"><script src="https://accounts.google.com/gsi/client" async defer></script><script src="./google-auth.js" defer></script></head>
+<body><div class="module-shell">
+<header class="module-top"><a class="module-brand" href="../"><b>Z</b><span>ZEVON<small>DRIVER PORTAL</small></span></a><nav class="module-nav"><a href="../">Customer</a><a href="../admin/">Admin</a><a class="active" href="./">Driver</a></nav></header>
+<main class="module-main">
+<div class="module-heading"><div><div class="kicker">DRIVER ON-THE-GO</div><h1>Your trips. One place.</h1><p class="subtext">See assigned journeys, pickup details and trip instructions. Update trip progress only through an authenticated driver account.</p></div><span class="role-pill">DRIVER WORKSPACE</span></div>
+<div class="notice"><strong><span class="status-dot"></span>Driver access is not enabled yet</strong>Google Sign-In is being prepared for staging. Google identity alone does not grant ZEVON access: the backend must verify the ID token and match its verified email to an active driver record before showing any trip information.</div>
+<div class="stat-grid">
+<article class="stat-card"><div class="stat-label">Today's trips</div><div class="stat-value">—</div><div class="stat-note">Available after driver sign-in</div></article>
+<article class="stat-card"><div class="stat-label">Upcoming</div><div class="stat-value">—</div><div class="stat-note">Available after driver sign-in</div></article>
+<article class="stat-card"><div class="stat-label">Completed</div><div class="stat-value">—</div><div class="stat-note">Available after driver sign-in</div></article>
+<article class="stat-card"><div class="stat-label">Trip earnings</div><div class="stat-value">—</div><div class="stat-note">Shown only if enabled by Admin</div></article>
+</div>
+<div class="panel-grid">
+<section class="panel"><h2>Assigned trips</h2><div class="empty-state"><b>No trip data loaded</b>Your assigned trips will appear here after secure driver sign-in. No sample or other driver's trip records are shown.</div></section>
+<section class="panel"><h2>Trip status</h2><div class="module-actions"><button class="module-button" disabled>Accept assignment</button><button class="module-button" disabled>Arrived at pickup</button><button class="module-button" disabled>Start trip</button><button class="module-button" disabled>Complete trip</button></div><p class="subtext">Status updates require server-side ownership checks, timestamps and an audit trail.</p></section>
+</div>
+<section class="panel" style="margin-top:14px"><h2>Driver sign-in</h2><div class="form-row"><div class="module-field"><label>Sign-in method</label><input value="Google account (no SMS OTP)" disabled></div><div class="module-field"><label>Driver access</label><input value="Only pre-approved Google emails" disabled></div></div><div id="google-signin-button" class="module-actions" style="margin-top:14px" aria-label="Google sign-in"></div><p id="google-signin-status" class="subtext" role="status" aria-live="polite" hidden></p><p class="subtext">Staging identity test only. The Google credential is not stored or sent to a server by this page. Driver access, trip data and status updates remain disabled until secure backend token verification, active-driver allowlisting and short-lived sessions are implemented. No SMS is used.</p></section>
+</main><footer class="module-footer"><span>© 2026 ZEVON Mobility</span><a href="https://zevonmobility.com/">Main website ↗</a></footer></div></body></html>
