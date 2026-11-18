@@ -48,6 +48,7 @@ async function verifyGoogleCredential(token,clientId) {
   if(!valid) throw new Error("Invalid credential signature");
   const now=Math.floor(Date.now()/1000), audience=Array.isArray(claims.aud)?claims.aud:[claims.aud];
   if(!GOOGLE_ISSUERS.has(claims.iss)||!audience.includes(clientId)) throw new Error("Invalid issuer or audience");
+  if(claims.azp&&claims.azp!==clientId) throw new Error("Invalid authorized party");
   if(!Number.isFinite(claims.exp)||claims.exp<=now||!Number.isFinite(claims.iat)||claims.iat>now+60) throw new Error("Expired or invalid credential time");
   if(claims.email_verified!==true||typeof claims.sub!=="string"||!claims.sub||typeof claims.email!=="string"||!claims.email.includes("@")) throw new Error("Unverified identity");
   return {googleSub:claims.sub,email:claims.email.trim().toLowerCase()};
@@ -114,4 +115,4 @@ async function handle(request,env) {
   }
   return json({ok:false,error:"NOT_FOUND"},404,origin);
 }
-export default {async fetch(request,env){try{return await handle(request,env);}catch{return json({ok:false,error:"INTERNAL_ERROR"},500);}}};
+export default {async fetch(request,env){const origin=request.headers.get("origin")||"";try{return await handle(request,env);}catch{return json({ok:false,error:"INTERNAL_ERROR"},500,origin===env.ALLOWED_ORIGIN?origin:"");}}};
