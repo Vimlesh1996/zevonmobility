@@ -76,7 +76,7 @@ All endpoints must return a consistent envelope with `ok`, `requestId`, `data` o
 ## Frontend modules
 
 - `../www/admin/`: Admin workspace shell. It deliberately displays no private data and keeps actions disabled until secure Admin APIs exist.
-- `../www/driver/`: Driver workspace shell. It now identifies Google Sign-In as the planned no-SMS-cost method; controls remain disabled until OAuth client configuration and secure backend endpoints exist.
+- `../www/driver/`: Driver workspace shell with Google Identity Services loaded using the public Web Client ID. The callback is an identity-handshake smoke test only: it does not persist, decode, or transmit the credential, and it does not enable driver access. Trip data and actions remain disabled until secure backend verification and driver allowlisting exist.
 - `../www/modules.css`: shared module styling.
 
 ## Release gates
@@ -95,3 +95,19 @@ All endpoints must return a consistent envelope with `ok`, `requestId`, `data` o
 - Firebase phone authentication SMS is billed per SMS and requires the Blaze plan: https://firebase.google.com/pricing/
 - Firebase FAQ confirms SMS phone authentication requires a Cloud Billing account: https://firebase.google.com/docs/auth/faq-and-troubleshooting
 - Apps Script email quotas (for optional email OTP fallback): https://developers.google.com/apps-script/guides/services/quotas
+
+
+## Google Sign-In staging checkpoint (18 Nov 2026)
+
+- Google OAuth Web Client ID is configured in `app/www/driver/google-auth.js` as a public browser identifier. It is not a secret.
+- The configured JavaScript origin is `https://vimlesh1996.github.io`. The owner must save this origin in Google Auth Platform before testing.
+- The current driver page uses Google Identity Services popup UX and renders Google's official sign-in button.
+- The callback intentionally discards the credential. It does not log, decode, persist, or send the ID token. The page only reports that a Google identity response was received.
+- This is **not** ZEVON driver authentication. No driver session is issued and no driver data/actions are enabled.
+- The OAuth app is in Testing mode; add test accounts under Audience → Test users.
+- Do not publish this branch through the repository's existing GitHub Pages configuration until its deployment source and custom-domain mapping are checked. The repository contains a root `CNAME` for the production domain; a Pages branch switch could affect the live website.
+- Never commit a Client Secret or downloaded OAuth client JSON. The previously exposed secret should be rotated/revoked in Google Cloud Console; the replacement secret must remain private and is not needed by this browser-only GIS test.
+
+### Next implementation gate
+
+Build a staging-only backend endpoint that verifies the Google ID token server-side (issuer, audience, signature, expiry and verified email), maps the email to an active immutable Driver_ID, and issues a short-lived session. Only after that endpoint and a staging driver registry are tested may the UI exchange the credential and show driver data.
