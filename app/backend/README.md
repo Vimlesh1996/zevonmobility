@@ -10,12 +10,28 @@ The deployed Google Apps Script Web App is already used by the public website an
 
 The Apps Script source project is not present in this GitHub repository. The production endpoint must not be replaced or modified blindly. This document is the implementation contract for extending the existing Apps Script project without breaking its current handlers.
 
+## No-SMS-cost driver sign-in decision
+
+Preferred approach for the initial driver rollout: **Google Sign-In using each driver's own Google account**, not SMS OTP.
+
+- No SMS is sent, so there is no per-message SMS-provider charge.
+- The driver must have a Google account and ZEVON must register that account's verified email against an active, immutable `Driver_ID` in a private `Drivers` registry.
+- The backend must verify the Google ID token (signature, issuer, audience, expiry and verified email) and then look up the email in the private driver registry. Never accept a `Driver_ID` or role supplied by the browser.
+- A valid Google account that is not allowlisted, or whose driver record is inactive, must be denied.
+- The backend must issue a short-lived app session and enforce driver ownership on every trip read/write.
+- Use a Google OAuth web client ID configured in the backend/deployment environment. Do not put client secrets in the app repository.
+- This removes SMS OTP costs; it does not make identity verification optional. Google sign-in is not an SMS OTP.
+
+Fallback only if a driver cannot use a Google account: email OTP sent by Apps Script `MailApp` to a verified, pre-registered email. This is subject to Google's daily email quotas (currently 100 recipients/day for consumer accounts and 1,500/day for Workspace accounts) and should have rate limits, expiry, one-time use, and abuse protection. Do not send OTP to an arbitrary email entered by the browser.
+
+Firebase phone authentication is not selected for the no-cost launch: Firebase requires the Blaze billing plan for phone SMS and charges per SMS sent.
+
 ## Security requirements (mandatory)
 
 1. Keep the existing customer actions and their request/response shapes backward-compatible.
 2. Admin and driver endpoints must be separate from public actions and must require a short-lived authenticated session.
-3. Verify Google ID tokens server-side against the configured OAuth audience, issuer, expiry and verified email. Admin emails must be explicitly allowlisted in Script Properties. Do not trust a role sent by the browser.
-4. Driver access must use an approved OTP provider (or another verified identity provider). Do not treat a phone number alone as authentication.
+3. Verify Google ID tokens server-side against the configured OAuth audience, issuer, expiry and verified email. Admin emails must be explicitly allowlisted in Script Properties. Driver emails must map to an active immutable driver ID in the private driver registry. Do not trust a role or driver ID sent by the browser.
+4. Driver access must use Google Sign-In (preferred) or an approved OTP provider / verified email OTP. Do not treat a phone number alone as authentication.
 5. Every request must be authorised server-side. Drivers may read/update only trips assigned to their own immutable driver ID. Admin roles may be split into owner, operations and read-only.
 6. Never expose the private Google Sheet, spreadsheet ID, service-account key, Script Properties, OTP secrets or admin tokens to browser code.
 7. Validate all fields, enforce state transitions, rate-limit authentication, expire sessions, and write sensitive actions to an append-only audit log.
@@ -27,13 +43,13 @@ The Apps Script source project is not present in this GitHub repository. The pro
 
 Create these only after confirming the existing workbook and its headers:
 - `Users`: immutable user ID, verified email/phone, role, active flag, created/updated timestamps.
-- `Drivers`: driver ID, user ID, verification status, operational status, approved vehicle categories.
+- `Drivers`: immutable driver ID, user ID, verified Google email, verification status, operational status, approved vehicle categories.
 - `Vehicles`: vehicle ID, registration, category, fuel, capacity, verification status, active flag.
 - `Trip_Assignments`: assignment ID, booking reference, driver ID, vehicle ID, assignment status, assigned timestamp.
 - `Trip_Events`: assignment ID, actor ID, event type, event timestamp, location (only when consented/required), notes.
 - `Audit_Log`: actor ID, role, action, record ID, timestamp, outcome.
 
-Do not rename or repurpose the existing `Bookings` or `Admin_Dashboard` tabs. Map existing booking columns only after inspecting the real header row.
+Do not rename or repurpose the existing `Bookings` or `Admin_Dashboard` tabs. Map existing booking columns only after inspecting the real header row. See `WORKBOOK-MAPPING.md` for the exported workbook's actual headers and schema differences.
 
 ## API contract to implement
 
@@ -49,7 +65,7 @@ Authenticated Admin:
 - `admin.reports.summary`: server-generated aggregates, not raw sheet dumps.
 
 Authenticated Driver:
-- `driver.session`: exchange a verified OTP result for a short-lived driver session.
+- `driver.session`: exchange a verified Google identity token for a short-lived driver session.
 - `driver.trips.list`: return only that driver's assigned trips.
 - `driver.trip.get`: return only the driver's own assignment and minimum required trip details.
 - `driver.trip.event`: accept only allowed state transitions (assigned → accepted → arrived → started → completed; cancellation/rejection only through defined rules).
@@ -60,14 +76,22 @@ All endpoints must return a consistent envelope with `ok`, `requestId`, `data` o
 ## Frontend modules
 
 - `../www/admin/`: Admin workspace shell. It deliberately displays no private data and keeps actions disabled until secure Admin APIs exist.
-- `../www/driver/`: Driver workspace shell. It deliberately displays no trip data and keeps trip actions disabled until OTP and driver ownership checks exist.
+- `../www/driver/`: Driver workspace shell. It now identifies Google Sign-In as the planned no-SMS-cost method; controls remain disabled until OAuth client configuration and secure backend endpoints exist.
 - `../www/modules.css`: shared module styling.
 
 ## Release gates
 
-- Review actual Apps Script source and existing sheet headers before writing the adapter.
-- Add and test the extension in a staging copy of the Apps Script deployment and spreadsheet.
-- Test owner, operations, read-only, active driver, inactive driver, wrong-driver, expired-session and unauthenticated cases.
-- Verify no private data is returned by public `quote`, `bootstrap`, `ack` or customer `booking` actions.
-- Test concurrent driver assignments and duplicate status requests.
-- Keep production deployment version unchanged until all checks pass and the owner approves rollout.
+1. Configure a Google OAuth web client ID and approved driver Google emails.
+2. Review actual Apps Script source and existing sheet headers before writing the adapter.
+3. Add and test the extension in a staging copy of the Apps Script deployment and spreadsheet.
+4. Test owner, operations, read-only, active driver, inactive driver, wrong-driver, expired-session and unauthenticated cases.
+5. Verify no private data is returned by public `quote`, `bootstrap`, `ack` or customer `booking` actions.
+6. Test concurrent driver assignments and duplicate status requests.
+7. Keep the current customer API actions backward-compatible.
+8. Keep the production deployment version unchanged until all checks pass and the owner approves rollout.
+
+## Official pricing and quota references
+
+- Firebase phone authentication SMS is billed per SMS and requires the Blaze plan: https://firebase.google.com/pricing/
+- Firebase FAQ confirms SMS phone authentication requires a Cloud Billing account: https://firebase.google.com/docs/auth/faq-and-troubleshooting
+- Apps Script email quotas (for optional email OTP fallback): https://developers.google.com/apps-script/guides/services/quotas
