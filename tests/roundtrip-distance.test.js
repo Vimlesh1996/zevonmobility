@@ -51,6 +51,6 @@ test('Apps Script fare engine doubles one-way route distance once (when source i
 }, () => {
   const appsScript = fs.readFileSync(appsScriptPath, 'utf8');
   assert.match(appsScript, /const billableRouteKm\s*=\s*isRound\s*\?\s*mapKm\s*\*\s*2\s*:\s*mapKm/);
-  assert.match(appsScript, /do not multiply route km\\s*by duration/i);
+  assert.match(appsScript, /Map distance is one-way[\\s\\S]*?by duration for multi-day trips/i);
   assert.match(appsScript, /const includedKmForTrip\s*=\s*inKm\s*\*\s*kmAllowanceUnits/);
 });
