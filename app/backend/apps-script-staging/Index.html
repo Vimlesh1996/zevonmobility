@@ -5,14 +5,14 @@
   <meta name="viewport" content="width=device-width,initial-scale=1">
   <meta name="theme-color" content="#10201b">
   <title>ZEVON Driver Sign-In — Staging</title>
-  <script src="https://accounts.google.com/gsi/client" async defer></script>
   <style>
     *{box-sizing:border-box}body{margin:0;min-height:100vh;background:#f3f6f4;color:#14231e;font:16px Arial,sans-serif;display:grid;place-items:center;padding:24px}
     main{width:min(100%,460px);background:#fff;border:1px solid #dce5df;border-radius:22px;padding:30px;box-shadow:0 16px 50px #13251a12}
     .brand{font-weight:800;letter-spacing:2px;color:#176b4a}.tag{font-size:12px;color:#738078;letter-spacing:1.5px;margin-top:5px}
     h1{font-size:28px;margin:28px 0 8px}.muted{color:#627068;line-height:1.55;font-size:14px}
-    #googleButton{margin:24px 0 12px;min-height:44px}#status{padding:12px;border-radius:10px;background:#f1f4f2;color:#435148;font-size:14px;line-height:1.5}
-    #profile{display:none;padding:16px;border-radius:12px;background:#edf7f0;margin-top:14px}.small{font-size:12px;color:#7b877f;margin-top:24px}
+    .action{display:inline-block;margin:24px 0 12px;padding:14px 22px;border-radius:9px;background:#176b4a;color:#fff;text-decoration:none;font-weight:700}
+    #status{padding:12px;border-radius:10px;background:#f1f4f2;color:#435148;font-size:14px;line-height:1.5}
+    .small{font-size:12px;color:#7b877f;margin-top:24px}.error{background:#fff0ef!important;color:#9c2923!important}
   </style>
 </head>
 <body>
@@ -20,53 +20,13 @@
   <div class="brand">ZEVON MOBILITY</div><div class="tag">DRIVER PORTAL · STAGING</div>
   <h1>Driver sign-in</h1>
   <p class="muted">Continue with the Google account registered by ZEVON Admin. Only active, approved driver accounts can receive a staging session.</p>
-  <div id="googleButton"></div>
-  <div id="status" role="status" aria-live="polite">Loading Google Sign-In…</div>
-  <section id="profile">
-    <strong id="driverName"></strong>
-    <p class="muted" id="driverId"></p>
-    <button id="logout" type="button">Sign out</button>
-  </section>
+  <? if (authUrl) { ?>
+    <a class="action" href="<?= authUrl ?>" target="_top" rel="noopener">Continue with Google</a>
+    <div id="status">Ready. Select your approved Google account to continue.</div>
+  <? } else { ?>
+    <div id="status" class="error"><?= configError ?></div>
+  <? } ?>
   <p class="small">STAGING ONLY · No customer booking data · No production system connection</p>
 </main>
-<script>
-  const CLIENT_ID = <?!= JSON.stringify(clientId) ?>;
-  let sessionToken = null;
-  const statusEl = document.getElementById('status');
-  function status(message){ statusEl.textContent = message; }
-  function credentialResponse(response) {
-    status('Checking Google account and ZEVON driver approval…');
-    google.script.run
-      .withSuccessHandler(result => {
-        sessionToken = result.sessionToken;
-        document.getElementById('driverName').textContent = result.driver.displayName || 'Approved driver';
-        document.getElementById('driverId').textContent = 'Driver ID: ' + result.driver.driverId;
-        document.getElementById('profile').style.display = 'block';
-        document.getElementById('googleButton').style.display = 'none';
-        status('Google sign-in successful. Staging session expires: ' + new Date(result.expiresAt).toLocaleString());
-      })
-      .withFailureHandler(error => status(error && error.message ? error.message : 'Sign-in failed. Please try again.'))
-      .loginWithGoogle(response.credential);
-  }
-  window.addEventListener('load', () => {
-    const wait = setInterval(() => {
-      if (window.google && google.accounts && google.accounts.id) {
-        clearInterval(wait);
-        google.accounts.id.initialize({client_id:CLIENT_ID,callback:credentialResponse,auto_select:false});
-        google.accounts.id.renderButton(document.getElementById('googleButton'),{theme:'outline',size:'large',shape:'rectangular',text:'continue_with',width:280});
-        status('Ready. Sign in with an approved Google test account.');
-      }
-    },150);
-    setTimeout(() => { clearInterval(wait); if(!window.google) status('Google Sign-In could not load. Refresh and check your connection.'); },10000);
-  });
-  document.getElementById('logout').addEventListener('click', () => {
-    if (!sessionToken) return;
-    google.script.run.withSuccessHandler(() => {
-      sessionToken = null; document.getElementById('profile').style.display='none';
-      document.getElementById('googleButton').style.display='block';
-      status('Signed out. You can sign in again.');
-    }).withFailureHandler(() => status('Could not sign out. Please refresh.')).logoutDriver(sessionToken);
-  });
-</script>
 </body>
 </html>
