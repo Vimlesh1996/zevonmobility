@@ -29,8 +29,10 @@
 <label class="field conditional" id="return-date-wrap" hidden><span>Return date</span><input name="returnDate" id="return-date" type="date"></label>
 <label class="field conditional" id="duration-wrap" hidden><span id="duration-label">Duration</span><input name="duration" id="duration" type="number" min="1" max="365" value="1" inputmode="numeric"></label>
 <label class="field"><span>Passengers</span><select name="passengers" id="passengers"><option>1</option><option>2</option><option>3</option><option>4</option><option>5</option><option>6</option><option>7</option><option>8</option></select></label>
+<label class="field"><span>Luggage</span><select name="luggage" id="luggage"><option value="">Not specified</option><option>Light</option><option>Standard</option><option>Heavy</option><option>Group luggage</option></select></label>
 <label class="field"><span>Vehicle category</span><select name="vehicle" id="vehicle"><option>Any suitable vehicle</option><option>Hatchback</option><option>Sedan</option><option>SUV / MUV</option><option>Premium / Luxury</option><option>Van / Traveller</option><option>Bus / Coach</option></select></label>
 </div>
+<div class="form-grid contact-grid"><label class="field"><span>Your name</span><input name="name" id="name" required minlength="2" autocomplete="name" placeholder="Full name"></label><label class="field"><span>Mobile number</span><input name="phone" id="phone" required inputmode="tel" autocomplete="tel" placeholder="+91 98765 43210"></label><label class="field"><span>Email (optional)</span><input name="email" type="email" autocomplete="email" placeholder="you@example.com"></label></div>
 <label class="honeypot" aria-hidden="true">Leave empty<input name="website" tabindex="-1" autocomplete="off"></label>
 <button class="primary-button" id="submit-btn" type="submit"><span class="submit-label">Continue with enquiry</span><span aria-hidden="true">→</span></button>
 <p class="fine-print">This is an enquiry, not a confirmed booking. Availability and final pricing will be confirmed by the ZEVON team.</p><div id="form-status" class="form-status" role="status" aria-live="polite"></div>
