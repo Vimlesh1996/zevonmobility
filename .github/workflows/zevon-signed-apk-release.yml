@@ -76,7 +76,7 @@ jobs:
           if len(parts) != 3 or any(x < 0 for x in parts):
               raise SystemExit("Tag must use vMAJOR.MINOR.PATCH")
           code = parts[0] * 1000000 + parts[1] * 1000 + parts[2]
-          s = re.sub(r'(defaultConfig\\s*\\{)', r'\\1\\n        versionCode ' + str(code) + '\\n        versionName "' + tag + '"', s, count=1)
+          s = re.sub(r'(defaultConfig\s*\{)', r'\1\n        versionCode ' + str(code) + '\n        versionName "' + tag + '"', s, count=1)
           signing = '''
               signingConfigs {
                   release {
@@ -87,8 +87,8 @@ jobs:
                   }
               }
           '''
-          s = s.replace("    buildTypes {", signing + "\\n    buildTypes {", 1)
-          s = re.sub(r'(release\\s*\\{)', r'\\1\\n            signingConfig signingConfigs.release', s, count=1)
+          s = s.replace("    buildTypes {", signing + "\n    buildTypes {", 1)
+          s = re.sub(r'(release\s*\{)', r'\1\n            signingConfig signingConfigs.release', s, count=1)
           p.write_text(s)
           PY
 
