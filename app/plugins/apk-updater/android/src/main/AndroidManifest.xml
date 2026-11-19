@@ -1,3 +1,0 @@
-<manifest xmlns:android="http://schemas.android.com/apk/res/android">
-    <!-- Reuse the host app's existing FileProvider to avoid manifest-merger conflicts. -->
-</manifest>
