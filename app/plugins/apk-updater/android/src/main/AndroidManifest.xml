@@ -1,4 +1,17 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android">
     <uses-permission android:name="android.permission.REQUEST_INSTALL_PACKAGES" />
-    <!-- Capacitor already declares the app FileProvider. Reuse it to avoid duplicate metadata. -->
+    <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
+    <uses-permission android:name="android.permission.INTERNET" />
+    <application>
+        <service
+            android:name="com.zevon.mobility.updater.ZEVONFirebaseMessagingService"
+            android:exported="false">
+            <intent-filter>
+                <action android:name="com.google.firebase.MESSAGING_EVENT" />
+            </intent-filter>
+        </service>
+        <receiver
+            android:name="com.zevon.mobility.updater.InstallApkReceiver"
+            android:exported="false" />
+    </application>
 </manifest>
