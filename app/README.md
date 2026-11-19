@@ -1,60 +1,42 @@
-# ZEVON Mobility App
+# ZEVON Mobility Customer App
 
-Separate customer-facing app and Android wrapper. The existing production website and its GitHub Pages root remain separate.
+Android-first customer app. The production website root and live Apps Script deployment are not modified by this project branch.
 
-## Modules
+## Current milestone: M1 — Foundation + Home
 
-- Customer: `www/` — enquiry-first booking using the existing Apps Script customer endpoint.
-- Admin: `www/admin/` — public-safe locked workspace shell. The separate Apps Script staging portal provides an admin-only synthetic assignment console; it is not yet wired into this app page.
-- Driver: `www/driver/` — public-safe locked workspace shell. The separate Apps Script staging portal provides allowlisted driver sign-in and synthetic trip workflow; it is not yet wired into this app page.
+- Capacitor 7 shell; application ID: `com.zevon.mobility`.
+- Responsive customer home with ZEVON navy/red/light visual system.
+- Six enquiry trip types and five-tab navigation (Home, Book, My Requests, Offers, More).
+- Existing requestId + Apps Script acknowledgement submission contract retained.
+- No admin or driver portals in the customer app.
+- No direct APK self-updater. Future distribution updates should use Google Play in-app updates for Play builds.
+- No externally hosted fonts; system font stack is used until licensed local font assets are bundled.
 
-## Current backend integration
+## GitHub Actions build
 
-The customer module uses the currently deployed Apps Script Web App URL already present in the public website. It uses the existing `booking` POST and `ack` receipt polling contract.
+Every push to `feature/customer-app-rebuild` touching `app/**` or the Android workflow runs lint, contract tests, Capacitor Android project generation, and a debug APK build. The APK is uploaded as a workflow artifact for 14 days.
 
-The customer module uses the currently deployed production Apps Script endpoint. A separate staging Apps Script implementation is included at `backend/apps-script-staging/` for Google OAuth allowlisting, short-lived sessions, Admin assignment and Driver trip status tests against a separate staging spreadsheet. It is deliberately isolated from production and is not connected to the static `www/admin/` and `www/driver/` shells yet. Do not expose the private Google Sheet or add admin/driver secrets to frontend code.
+Open the repository Actions tab, select **ZEVON Android Build**, open the successful run, then download `zevon-mobility-debug-apk`.
 
-## URLs after GitHub Pages deployment
+## Local development (optional only)
 
-- App entry: `https://zevonmobility.com/app/`
-- Customer app: `https://zevonmobility.com/app/www/`
-- Admin workspace: `https://zevonmobility.com/app/www/admin/`
-- Driver workspace: `https://zevonmobility.com/app/www/driver/`
-- Existing website: `https://zevonmobility.com/`
+The project can be installed and run with Node 22, npm, Capacitor CLI and Android SDK 35. The owner has requested GitHub Actions as the development/build environment; no local setup is required for the intended workflow.
 
-## Android and direct APK updates
+## Backend
 
-- Android app checks the latest public GitHub Release on app launch (six-hour cache).
-- When a newer signed APK is published, an in-app update notice appears.
-- The native updater downloads the HTTPS GitHub Release asset, verifies its SHA-256 digest, then opens the Android installer. Android confirmation is required.
-- Signed release builds are tag-triggered by `.github/workflows/zevon-signed-apk-release.yml`.
-- One-time keystore creation and GitHub Actions secret configuration: `ANDROID-DIRECT-UPDATE-SETUP.md`.
-- The permanent signing key is essential. Do not lose it, rotate it, or commit it.
+The existing Apps Script requestId/ack integration is retained in the current customer booking flow. Do not change the live deployment, spreadsheet permissions, endpoint or data model without explicit owner approval. Fare quotes, map search, vehicle inventory, and booking status are subsequent milestones and must use server-provided data only.
 
-## Android
+## Milestones
 
-- Application ID: `com.zevon.mobility`
-- Display name: `ZEVON Mobility`
-- Web assets: `www/`
+- M0 Design: approved.
+- M1 Foundation + Home: in implementation; CI and device QA pending.
+- M2 Location search, map, route and server quote results.
+- M3 Passenger details, verified enquiry acknowledgement and My Requests.
+- M4 Corporate, Partner/Fleet, Contact, Offers and content.
+- M5 Accessibility, performance, Android QA and store preparation.
 
-Build a debug APK locally:
+## Safety
 
-```bash
-cd app
-npm install
-npx cap add android
-npx cap sync android
-cd android
-./gradlew assembleDebug
-```
-
-A signed Play Store AAB requires a release keystore and GitHub Actions secrets. Never commit signing keys or passwords.
-
-## Release safety
-
-- Use `zevon-final-v1` as the integrated release-candidate branch; keep `main` as production.
-- Review and merge via pull request.
-- Do not edit root website files, `CNAME`, sitemap, robots.txt, pricing scripts, or GitHub Pages settings as part of app work.
-- Do not switch GitHub Pages deployment settings in this phase.
-- Test a clearly marked enquiry and verify its receipt in the private Bookings sheet.
-- Keep Admin and Driver actions disabled until secure backend endpoints are deployed and tested in staging.
+- Work on `feature/customer-app-rebuild`.
+- Do not merge to `main`, deploy GitHub Pages, publish an APK release, change DNS, or modify live Apps Script without explicit approval.
+- Never commit signing keys, passwords, tokens, customer lists, or spreadsheet IDs.
