@@ -68,8 +68,11 @@ public class ApkDownloadWorker extends Worker {
                     if (isStopped()) return Result.retry();
                     out.write(buffer, 0, count);
                     received += count;
-                    if (total > 0) setProgressAsync(new Data.Builder().putInt("progress",
-                        (int) Math.min(99, received * 100 / total)).build());
+                    if (total > 0) {
+                        int progress = (int) Math.min(99, received * 100 / total);
+                        setProgressAsync(new Data.Builder().putInt("progress", progress).build());
+                        postProgress(progress, version == null ? "" : version);
+                    }
                 }
                 out.getFD().sync();
             }
@@ -87,6 +90,25 @@ public class ApkDownloadWorker extends Worker {
         } finally {
             if (connection != null) connection.disconnect();
         }
+    }
+
+    private void postProgress(int progress, String version) {
+        android.content.Context context = getApplicationContext();
+        if (Build.VERSION.SDK_INT >= 26) {
+            android.app.NotificationManager manager = context.getSystemService(android.app.NotificationManager.class);
+            if (manager != null) manager.createNotificationChannel(new android.app.NotificationChannel(
+                "zevon_updates", "ZEVON app updates", android.app.NotificationManager.IMPORTANCE_LOW));
+        }
+        androidx.core.app.NotificationCompat.Builder notice = new androidx.core.app.NotificationCompat.Builder(context, "zevon_updates")
+            .setSmallIcon(context.getApplicationInfo().icon)
+            .setContentTitle("Downloading ZEVON " + version)
+            .setContentText("Update download: " + progress + "%")
+            .setProgress(100, progress, false)
+            .setOngoing(true)
+            .setOnlyAlertOnce(true)
+            .setPriority(androidx.core.app.NotificationCompat.PRIORITY_LOW);
+        try { NotificationManagerCompat.from(context).notify(NOTICE_ID, notice.build()); }
+        catch (SecurityException ignored) { /* User may have denied notifications. */ }
     }
 
     private static String sha256(File file) throws Exception {
