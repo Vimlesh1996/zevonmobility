@@ -3,6 +3,30 @@
 const ENDPOINT='https://script.google.com/macros/s/AKfycbzlXJuFReuz1ywj4_KORsBMM7fSs_k5zb4euNA-5pOLEMGF9Pq2Bz3pkcspSs0AxhIx/exec';
 const form=document.getElementById('booking-form'),statusBox=document.getElementById('form-status'),submitButton=document.getElementById('submit-btn'),submitLabel=submitButton.querySelector('.submit-label');
 const dateInput=document.getElementById('travel-date'),returnWrap=document.getElementById('return-date-wrap'),returnInput=document.getElementById('return-date'),durationWrap=document.getElementById('duration-wrap'),durationInput=document.getElementById('duration'),durationLabel=document.getElementById('duration-label'),durationHint=document.getElementById('duration-hint');
+const REQUESTS_KEY='zevon_customer_requests_v1';
+function readRequests(){try{const rows=JSON.parse(localStorage.getItem(REQUESTS_KEY)||'[]');return Array.isArray(rows)?rows:[];}catch(_){return[];}}
+function saveRequest(payload,receipt){
+ const rows=readRequests();
+ rows.unshift({id:String(receipt.id),trip:String(payload.trip||'Trip'),pickup:String(payload.pickup||''),destination:String(payload.destination||''),date:String(payload.date||''),createdAt:new Date().toISOString()});
+ localStorage.setItem(REQUESTS_KEY,JSON.stringify(rows.slice(0,20)));
+ renderRequests();
+}
+function renderRequests(){
+ const host=document.getElementById('request-list');if(!host)return;
+ const rows=readRequests();host.replaceChildren();
+ if(!rows.length){const empty=document.createElement('div');empty.className='empty-card';empty.innerHTML='<span class="empty-symbol">▤</span><b>No saved requests yet</b><p>Your confirmed enquiry references from this device will appear here.</p><button class="secondary-button" type="button" data-go-home>Plan a journey</button>';host.appendChild(empty);empty.querySelector('[data-go-home]').addEventListener('click',()=>document.querySelector('[data-nav="home"]').click());return;}
+ rows.forEach(item=>{
+  const card=document.createElement('article');card.className='request-card';
+  const top=document.createElement('div');top.className='request-card-top';
+  const trip=document.createElement('b');trip.textContent=item.trip;
+  const state=document.createElement('span');state.className='request-status';state.textContent='Enquiry received';
+  top.append(trip,state);
+  const route=document.createElement('p');route.className='request-route';route.textContent=(item.pickup||'Pickup not saved')+' → '+(item.destination||'Destination not saved');
+  const meta=document.createElement('div');meta.className='request-meta';meta.textContent='Reference: '+item.id+' · Travel date: '+(item.date||'Not specified');
+  const note=document.createElement('small');note.textContent='Submitted successfully. Booking and availability are not yet confirmed.';
+  card.append(top,route,meta,note);host.appendChild(card);
+ });
+}
 const localToday=new Date(Date.now()-new Date().getTimezoneOffset()*60000).toISOString().slice(0,10);
 dateInput.min=localToday;dateInput.value=localToday;returnInput.min=localToday;const yearNode=document.getElementById('year');if(yearNode)yearNode.textContent=new Date().getFullYear();
 function setTrip(value){
@@ -62,7 +86,7 @@ form.addEventListener('submit',async e=>{
  submitButton.disabled=true;submitLabel.textContent='Sending securely…';
  statusBox.className='form-status show pending';statusBox.textContent='Sending your enquiry to ZEVON and waiting for a verified receipt. Please keep this page open.';
  try{
-  const receipt=await submitEnquiry(data);statusBox.className='form-status show success';
+  const receipt=await submitEnquiry(data);saveRequest(data,receipt);statusBox.className='form-status show success';
   statusBox.textContent='Enquiry received successfully. Your reference is '+receipt.id+'. This is not a confirmed booking; the ZEVON team will review availability and contact you.';
   form.reset();dateInput.value=localToday;returnInput.value='';setTrip('Airport transfer');statusBox.scrollIntoView({behavior:'smooth',block:'center'});
  }catch(error){statusBox.className='form-status show error';statusBox.textContent=error.message||'We could not confirm receipt. Please contact ZEVON before trying again.';}
@@ -71,8 +95,10 @@ form.addEventListener('submit',async e=>{
 if('serviceWorker'in navigator&&location.protocol.startsWith('http'))window.addEventListener('load',()=>navigator.serviceWorker.register('./sw.js').catch(()=>{}));
 })();
 
+renderRequests();
 document.querySelectorAll('[data-nav]').forEach(button=>button.addEventListener('click',()=>{
  const name=button.dataset.nav;
+ if(name==='requests')renderRequests();
  document.querySelectorAll('.screen').forEach(s=>s.classList.toggle('active',s.dataset.screen===name));
  document.querySelectorAll('[data-nav]').forEach(b=>{const active=b===button;b.classList.toggle('active',active);if(active)b.setAttribute('aria-current','page');else b.removeAttribute('aria-current');});
  window.scrollTo({top:0,behavior:'smooth'});
