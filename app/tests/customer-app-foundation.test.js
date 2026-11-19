@@ -37,3 +37,14 @@ test('customer app excludes admin and driver portal links',()=>{
 test('enquiry contract keeps requestId and verified acknowledgement flow',()=>{
  assert.match(js,/function requestId\(\)/);assert.match(js,/action:'ack'/);assert.match(js,/receipt\.ok===true&&receipt\.id/);
 });
+test('My Requests stores only server-confirmed enquiry references locally',()=>{
+ assert.match(html,/id="request-list"/);
+ assert.match(js,/REQUESTS_KEY='zevon_customer_requests_v1'/);
+ assert.match(js,/saveRequest\(data,receipt\)/);
+ assert.match(js,/window\.renderZevonRequests=renderRequests/);
+ assert.match(js,/Enquiry received/);
+});
+test('customer app version is incremented for this update test',()=>{
+ assert.equal(pkg.version,'1.0.1');
+ assert.match(html,/Version 1\.0\.1/);
+});
