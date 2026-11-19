@@ -22,6 +22,15 @@ The customer module uses the currently deployed production Apps Script endpoint.
 - Driver workspace: `https://zevonmobility.com/app/www/driver/`
 - Existing website: `https://zevonmobility.com/`
 
+## Android and direct APK updates
+
+- Android app checks the latest public GitHub Release on app launch (six-hour cache).
+- When a newer signed APK is published, an in-app update notice appears.
+- The native updater downloads the HTTPS GitHub Release asset, verifies its SHA-256 digest, then opens the Android installer. Android confirmation is required.
+- Signed release builds are tag-triggered by `.github/workflows/zevon-signed-apk-release.yml`.
+- One-time keystore creation and GitHub Actions secret configuration: `ANDROID-DIRECT-UPDATE-SETUP.md`.
+- The permanent signing key is essential. Do not lose it, rotate it, or commit it.
+
 ## Android
 
 - Application ID: `com.zevon.mobility`
