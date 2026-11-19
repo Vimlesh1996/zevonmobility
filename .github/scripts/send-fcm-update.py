@@ -11,7 +11,7 @@ from google.oauth2 import service_account
 
 tag = os.environ.get("RELEASE_TAG", "")
 repo = os.environ.get("GITHUB_REPOSITORY", "Vimlesh1996/zevonmobility")
-topic = os.environ.get("FCM_UPDATE_TOPIC", "zevon-app-updates").strip()
+topic = "zevon-app-updates"
 if not re.fullmatch(r"v\d+\.\d+\.\d+", tag):
     raise SystemExit(f"Invalid release tag: {tag!r}")
 if not re.fullmatch(r"[A-Za-z0-9_-]{1,900}", topic):
