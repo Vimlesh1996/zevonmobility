@@ -119,6 +119,7 @@ jobs:
       - name: Publish GitHub Release for in-app updater
         env:
           GH_TOKEN: ${{ github.token }}
+          RELEASE_TAG: ${{ inputs.release_tag || github.ref_name }}
         run: |
           gh release create "${RELEASE_TAG}" \
             "ZEVON-Mobility-${RELEASE_TAG}.apk" \
