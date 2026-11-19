@@ -8,6 +8,8 @@ const html=fs.readFileSync(path.join(root,'www','index.html'),'utf8');
 const css=fs.readFileSync(path.join(root,'www','styles.css'),'utf8');
 const js=fs.readFileSync(path.join(root,'www','app.js'),'utf8');
 const pkg=JSON.parse(fs.readFileSync(path.join(root,'package.json'),'utf8'));
+const updater=fs.readFileSync(path.join(root,'www','apk-updater.js'),'utf8');
+const nativeUpdater=fs.readFileSync(path.join(root,'plugins','apk-updater','android','src','main','java','com','zevon','mobility','updater','ApkUpdaterPlugin.java'),'utf8');
 
 test('customer app has five primary navigation destinations',()=>{
  for(const name of ['home','book','requests','offers','more'])assert.match(html,new RegExp('data-nav="'+name+'"'));
@@ -18,11 +20,16 @@ test('home offers all six supported trip types',()=>{
 test('ZEVON brand tokens and light surfaces are present',()=>{
  assert.match(css,/--red:#DA0B17/);assert.match(css,/--navy:#08142E/);assert.match(css,/color-scheme:light/);
 });
-test('no CDN fonts or direct APK self updater in customer bundle',()=>{
+test('no CDN fonts or insecure updater implementation',()=>{
  assert.doesNotMatch(html,/fonts\.googleapis|fonts\.gstatic/);
  assert.doesNotMatch(css,/fonts\.googleapis|fonts\.gstatic/);
- assert.doesNotMatch(js,/ZEVON direct APK updater|releases\/latest|downloadAndInstall/);
- assert.equal(pkg.dependencies['@zevon/apk-updater'],undefined);
+ assert.doesNotMatch(js,/fonts\\.googleapis|fonts\\.gstatic/);
+ assert.match(updater,/releases\\/latest/);
+ assert.match(updater,/sha256/);
+ assert.match(nativeUpdater,/MessageDigest/);
+ assert.match(nativeUpdater,/REQUEST_INSTALL_PACKAGES|canRequestPackageInstalls/);
+ assert.equal(pkg.dependencies['@zevon/apk-updater'],'file:plugins/apk-updater');
+ assert.match(html,/apk-updater\\.js/);
 });
 test('customer app excludes admin and driver portal links',()=>{
  assert.doesNotMatch(html,/admin\/|driver\//i);
