@@ -9,23 +9,27 @@
 - Android may ask the user to allow ZEVON to install unknown apps.
 - Android displays the final installation confirmation. Silent installation is not supported for ordinary Android apps.
 
+## Android implementation status
+
+The native plugin now subscribes to the fixed FCM topic `zevon-app-updates`, requests Android 13+ notification permission from the app, receives data-only FCM update events, and schedules a WorkManager download. The worker displays download progress, checks the GitHub SHA-256 digest, checks the package ID and installed signing certificate, and posts an Install update notification. Tapping Install opens Android's package installer; the user must confirm.
+
 ## FCM release-notification pipeline
 
 The signed release workflow now includes an optional post-release FCM notification step. Once configured, each successful version tag sends an Android notification to devices subscribed to the FCM topic `zevon-app-updates`. You can override the topic with the repository Actions variable `FCM_UPDATE_TOPIC`.
 
-One-time Firebase setup:
+One-time Firebase setup still required:
 
 1. Create/select a Firebase project and register Android package `com.zevon.mobility`.
 2. Enable Firebase Cloud Messaging.
-3. Create a service account authorized to send FCM messages.
-4. Add its complete JSON as GitHub Actions secret `FCM_SERVICE_ACCOUNT_JSON`. Never commit this credential or paste it into chat.
-5. Optionally add repository Actions variable `FCM_UPDATE_TOPIC`; default: `zevon-app-updates`.
+3. Download that Firebase project's `google-services.json` and add it to the repository at `app/google-services.json`. The signed release workflow applies the Google Services Gradle plugin when this file is present.
+4. Create a service account authorized to send FCM messages.
+5. Add its complete JSON as GitHub Actions secret `FCM_SERVICE_ACCOUNT_JSON`. Never commit this credential or paste it into chat.
 
-**Client prerequisite:** The Android app must also include Firebase Messaging, request notification permission on Android 13+, and subscribe to the same topic (or register device tokens). It must handle the `zevon_app_update` message. The repository currently has no Firebase Android config or client-side FCM integration, so adding the Actions secret alone will not make installed apps receive notifications. Add the Firebase project's `google-services.json` and native messaging integration before enabling this in production.
+The Android app subscribes to the fixed topic `zevon-app-updates`; the release workflow sends to that same topic. Until both `app/google-services.json` and the Actions secret exist, FCM delivery will not work.
 
 ## Automatic download and install prompt
 
-The existing native updater starts downloading only after the in-app button is clicked. FCM notification delivery does not itself download the APK. The remaining Android work is a native WorkManager download worker, persistent progress notification, safe APK validation, and installer handoff.
+The FCM client schedules a WorkManager download, posts progress, verifies SHA-256, package ID, and signing certificate, then posts an Install update notification. The Android installer still requires the user to confirm. The original in-app update action remains available as a fallback.
 
 Target flow:
 1. Receive FCM update event.
