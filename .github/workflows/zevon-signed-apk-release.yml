@@ -107,6 +107,9 @@ jobs:
 
       - name: Sync and build signed release APK
         env:
+          KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
+          STORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
+          KEY_PASSWORD: ${{ secrets.ANDROID_KEY_PASSWORD }}
           RELEASE_TAG: ${{ inputs.release_tag || github.ref_name }}
         run: |
           npx cap sync android
