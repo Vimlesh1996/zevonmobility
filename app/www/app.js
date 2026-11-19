@@ -6,10 +6,12 @@ const dateInput=document.getElementById('travel-date'),returnWrap=document.getEl
 const REQUESTS_KEY='zevon_customer_requests_v1';
 function readRequests(){try{const rows=JSON.parse(localStorage.getItem(REQUESTS_KEY)||'[]');return Array.isArray(rows)?rows:[];}catch(_){return[];}}
 function saveRequest(payload,receipt){
- const rows=readRequests();
- rows.unshift({id:String(receipt.id),trip:String(payload.trip||'Trip'),pickup:String(payload.pickup||''),destination:String(payload.destination||''),date:String(payload.date||''),createdAt:new Date().toISOString()});
- localStorage.setItem(REQUESTS_KEY,JSON.stringify(rows.slice(0,20)));
- renderRequests();
+ try{
+  const rows=readRequests();
+  rows.unshift({id:String(receipt.id),trip:String(payload.trip||'Trip'),pickup:String(payload.pickup||''),destination:String(payload.destination||''),date:String(payload.date||''),createdAt:new Date().toISOString()});
+  localStorage.setItem(REQUESTS_KEY,JSON.stringify(rows.slice(0,20)));
+  renderRequests();
+ }catch(error){console.warn('Could not save local enquiry history:',error.message);}
 }
 function renderRequests(){
  const host=document.getElementById('request-list');if(!host)return;
