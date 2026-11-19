@@ -1,66 +1,77 @@
 # ZEVON Direct APK Auto-Update — Setup & Release Guide
 
-## What the app does
+## Existing updater
 
-- Checks the latest **published GitHub Release** when the Android app opens (cached for up to six hours).
-- Shows an in-app update card when the release tag is newer than the installed version.
-- Downloads only a GitHub Release APK over HTTPS.
-- Requires the release asset's GitHub SHA-256 digest and verifies the downloaded APK before opening Android's installer.
-- Requests Android's per-app "Install unknown apps" permission only when needed.
-- Android displays the final install confirmation. Silent installation is not supported on ordinary Android devices.
+- Android checks the latest published GitHub Release when the app opens and returns to foreground.
+- An in-app update card appears when the release is newer than the installed version.
+- The user currently taps **Update now** to start the APK download.
+- The native updater accepts HTTPS GitHub Release APK URLs and verifies the SHA-256 digest before opening Android's installer.
+- Android may ask the user to allow ZEVON to install unknown apps.
+- Android displays the final installation confirmation. Silent installation is not supported for ordinary Android apps.
 
-## One-time signing key setup (owner's computer only)
+## FCM release-notification pipeline
 
-The signing key is the identity of the app. Keep a secure offline backup. Never commit it, upload it to chat, email it, or put it in the repository.
+The signed release workflow now includes an optional post-release FCM notification step. Once configured, each successful version tag sends an Android notification to devices subscribed to the FCM topic `zevon-app-updates`. You can override the topic with the repository Actions variable `FCM_UPDATE_TOPIC`.
 
-Generate it once on a trusted computer (use a strong unique password and keep it safe):
+One-time Firebase setup:
+
+1. Create/select a Firebase project and register Android package `com.zevon.mobility`.
+2. Enable Firebase Cloud Messaging.
+3. Create a service account authorized to send FCM messages.
+4. Add its complete JSON as GitHub Actions secret `FCM_SERVICE_ACCOUNT_JSON`. Never commit this credential or paste it into chat.
+5. Optionally add repository Actions variable `FCM_UPDATE_TOPIC`; default: `zevon-app-updates`.
+
+**Client prerequisite:** The Android app must also include Firebase Messaging, request notification permission on Android 13+, and subscribe to the same topic (or register device tokens). It must handle the `zevon_app_update` message. The repository currently has no Firebase Android config or client-side FCM integration, so adding the Actions secret alone will not make installed apps receive notifications. Add the Firebase project's `google-services.json` and native messaging integration before enabling this in production.
+
+## Automatic download and install prompt
+
+The existing native updater starts downloading only after the in-app button is clicked. FCM notification delivery does not itself download the APK. The remaining Android work is a native WorkManager download worker, persistent progress notification, safe APK validation, and installer handoff.
+
+Target flow:
+1. Receive FCM update event.
+2. Fetch authoritative latest release metadata and SHA-256 from GitHub.
+3. Schedule WorkManager download with network constraints and retry.
+4. Verify SHA-256, package identity, and signing certificate.
+5. Show a download-complete notification with an **Install** action.
+6. Open Android's package installer; the user confirms installation.
+
+Never put Firebase service-account credentials or release signing keys in the Android app.
+
+## One-time signing key setup
+
+Generate the signing key once on a trusted computer and keep an offline backup:
 
 ```bash
 keytool -genkeypair -v -keystore zevon-release.keystore -alias zevon-release -keyalg RSA -keysize 4096 -validity 10000
 ```
 
-Convert it to a single-line Base64 value locally:
+Create these GitHub Actions secrets:
+- `ANDROID_KEYSTORE_BASE64`
+- `ANDROID_KEY_ALIAS`
+- `ANDROID_KEYSTORE_PASSWORD`
+- `ANDROID_KEY_PASSWORD`
 
-- macOS/Linux: `base64 -w 0 zevon-release.keystore`
-- macOS without `-w`: `base64 zevon-release.keystore | tr -d '\\n'`
-- Windows PowerShell: `[Convert]::ToBase64String([IO.File]::ReadAllBytes("zevon-release.keystore"))`
+Do not paste secrets into ChatGPT, issues, or PR comments. If the key is lost, future APKs cannot update installations signed with it.
 
-In GitHub, open **Settings → Secrets and variables → Actions → New repository secret** and create:
+## Publish a version
 
-1. `ANDROID_KEYSTORE_BASE64` — the Base64 output (large secret).
-2. `ANDROID_KEY_ALIAS` — `zevon-release` (or the alias chosen).
-3. `ANDROID_KEYSTORE_PASSWORD` — keystore password.
-4. `ANDROID_KEY_PASSWORD` — key password.
-
-Do not paste any of these secret values into ChatGPT or issues/PR comments. Keep an offline backup of the original keystore and passwords. If the key is lost, future APKs cannot update installations signed with it.
-
-## Publish a new version
-
-After the release-candidate changes are reviewed and merged by the owner, update the app's version as needed and push a semantic version tag, e.g.:
+After review and merge, push a unique semantic version tag, for example:
 
 ```bash
-git tag v1.0.1
-git push origin v1.0.1
+git tag v1.0.2
+git push origin v1.0.2
 ```
 
-The `ZEVON Signed Direct APK Release` workflow then:
-1. checks the four signing secrets;
-2. generates the Android project and registers the local Capacitor updater plugin;
-3. sets Android versionName/versionCode from the tag;
-4. builds and verifies a signed release APK;
-5. creates a GitHub Release with `ZEVON-Mobility-vX.Y.Z.apk` and its SHA-256 sidecar.
-
-The app checks that public release and offers the update. Do not reuse a tag/versionCode.
+The signed release workflow builds and publishes the APK, then sends the FCM topic notification if `FCM_SERVICE_ACCOUNT_JSON` is configured. A normal branch push does not update installed Android apps. Never reuse a tag/versionCode.
 
 ## First signed release migration
 
-The existing debug APK is signed with a debug certificate, not this permanent release key. Android will not install a differently signed APK as an in-place update. For the first release-key migration, uninstall the debug build and install the first signed release APK (this removes app-local data). After that, all future releases signed with the same keystore can update in place.
+The existing debug APK uses a debug certificate. Android will not install a differently signed APK as an in-place update. For the first release-key migration, uninstall the debug build and install the first signed release APK (this removes app-local data). Later releases must use the same application ID and signing key.
 
-## Security / production gates
+## Production gates
 
-- Keep the keystore private; only GitHub Actions secrets are used by CI.
-- Do not rotate or replace the release key for routine updates.
-- APK is downloaded to private app cache and checksum-verified before installer launch.
+- Keep signing keys and Firebase service-account JSON private in GitHub Actions secrets.
+- Verify APK checksum and signing identity before install.
 - Android user confirmation is always required.
-- Release workflow only runs on version tags; it does not deploy the website, change DNS, or modify Google Sheets/Apps Script.
-- The current branch is a release candidate. Do not publish a real release until the owner has added signing secrets, tested the first signed APK on a device, and approved release.
+- FCM delivery remains inactive until Firebase config, Actions secret, Android client subscription, and message handling are all configured.
+- Do not publish a production release until signed APK installation is tested on a real device.
