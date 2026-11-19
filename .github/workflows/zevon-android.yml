@@ -5,6 +5,7 @@ on:
   push:
     branches:
       - zevon-app-v1
+      - zevon-final-v1
     paths:
       - 'app/**'
       - '.github/workflows/zevon-android.yml'
@@ -44,6 +45,9 @@ jobs:
 
       - name: Install dependencies
         run: npm install --no-package-lock
+
+      - name: Run booking contract tests
+        run: npm test
 
       - name: Generate Android project
         run: npx cap add android
