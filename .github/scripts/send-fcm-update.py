@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Send an FCM topic notification after a ZEVON signed APK release."""
+"""Send a data-only FCM update event after a ZEVON signed APK release."""
 import json
 import os
 import re
@@ -23,6 +23,21 @@ except (KeyError, json.JSONDecodeError) as exc:
 project = info.get("project_id")
 if not project:
     raise SystemExit("Service-account JSON has no project_id.")
+
+api = f"https://api.github.com/repos/{repo}/releases/tags/{tag}"
+request = urllib.request.Request(api, headers={"Accept": "application/vnd.github+json"})
+with urllib.request.urlopen(request, timeout=30) as response:
+    release = json.loads(response.read().decode())
+asset = next((a for a in release.get("assets", [])
+              if re.fullmatch(r"ZEVON-Mobility-v\d+\.\d+\.\d+\.apk", a.get("name", ""))), None)
+digest = (asset or {}).get("digest", "")
+digest = digest.removeprefix("sha256:")
+if not asset or not re.fullmatch(r"[a-fA-F0-9]{64}", digest):
+    raise SystemExit("Published release APK or GitHub SHA-256 digest is missing.")
+download_url = asset.get("browser_download_url", "")
+if not download_url.startswith("https://github.com/") or "/releases/download/" not in download_url:
+    raise SystemExit("Release APK URL is not an official GitHub Release URL.")
+
 credentials = service_account.Credentials.from_service_account_info(
     info, scopes=["https://www.googleapis.com/auth/firebase.messaging"]
 )
@@ -30,17 +45,15 @@ credentials.refresh(Request())
 payload = {
     "message": {
         "topic": topic,
-        "notification": {
-            "title": "ZEVON Mobility update available",
-            "body": f"Version {tag} is ready. Open ZEVON to download the update.",
-        },
         "data": {
             "type": "zevon_app_update",
             "version": tag[1:],
             "releaseTag": tag,
-            "releaseUrl": f"https://github.com/{repo}/releases/tag/{tag}",
+            "downloadUrl": download_url,
+            "fileName": asset["name"],
+            "sha256": digest.lower(),
         },
-        "android": {"priority": "NORMAL"},
+        "android": {"priority": "HIGH"},
     }
 }
 request = urllib.request.Request(
@@ -55,7 +68,7 @@ request = urllib.request.Request(
 try:
     with urllib.request.urlopen(request, timeout=30) as response:
         result = json.loads(response.read().decode())
-        print(f"FCM notification accepted for topic {topic}: {result.get('name', 'ok')}")
+        print(f"FCM update event accepted for topic {topic}: {result.get('name', 'ok')}")
 except Exception as exc:
     print(f"FCM send failed: {exc}", file=sys.stderr)
     raise
