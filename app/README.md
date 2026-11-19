@@ -9,7 +9,9 @@ Android-first customer app. The production website root and live Apps Script dep
 - Six enquiry trip types and five-tab navigation (Home, Book, My Requests, Offers, More).
 - Existing requestId + Apps Script acknowledgement submission contract retained.
 - No admin or driver portals in the customer app.
-- No direct APK self-updater. Future distribution updates should use Google Play in-app updates for Play builds.
+- Direct APK update checker restored for Android builds. It checks the latest official GitHub Release, validates the SHA-256 digest, and opens Android's package installer after the user grants permission.
+- Android still requires the user to confirm installation; silent background installation is not available to an ordinary app.
+- Signed releases must use the same private keystore as the installed app. The release workflow requires `ANDROID_KEYSTORE_BASE64`, `ANDROID_KEY_ALIAS`, `ANDROID_KEYSTORE_PASSWORD`, and `ANDROID_KEY_PASSWORD` GitHub Actions secrets. Never commit these values or the keystore.
 - No externally hosted fonts; system font stack is used until licensed local font assets are bundled.
 
 ## GitHub Actions build
@@ -40,3 +42,7 @@ The existing Apps Script requestId/ack integration is retained in the current cu
 - Work on `feature/customer-app-rebuild`.
 - Do not merge to `main`, deploy GitHub Pages, publish an APK release, change DNS, or modify live Apps Script without explicit approval.
 - Never commit signing keys, passwords, tokens, customer lists, or spreadsheet IDs.
+
+## Direct APK updates
+
+The customer app checks the latest GitHub Release on launch and when returning to the foreground (with a six-hour cache). Release assets must be named `ZEVON-Mobility-vMAJOR.MINOR.PATCH.apk` and expose a GitHub SHA-256 asset digest. Publishing a tag such as `v1.0.1` runs `.github/workflows/zevon-signed-apk-release.yml`, builds a signed APK, and publishes it as a GitHub Release asset. Before publishing the first update, confirm the four signing secrets above are present and contain the exact same release keystore and alias used to sign the app already installed on the phone. A different signing key cannot update an existing installation.
