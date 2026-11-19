@@ -10,6 +10,7 @@ import androidx.work.Constraints;
 import androidx.work.Data;
 import androidx.work.NetworkType;
 import androidx.work.OneTimeWorkRequest;
+import androidx.work.OutOfQuotaPolicy;
 import androidx.work.WorkManager;
 import com.google.firebase.messaging.FirebaseMessagingService;
 import com.google.firebase.messaging.RemoteMessage;
@@ -47,8 +48,9 @@ public class ZEVONFirebaseMessagingService extends FirebaseMessagingService {
             .setRequiredNetworkType(NetworkType.CONNECTED)
             .build();
         OneTimeWorkRequest request = new OneTimeWorkRequest.Builder(ApkDownloadWorker.class)
-            .setInputData(input)
+             .setInputData(input)
             .setConstraints(constraints)
+            .setExpedited(OutOfQuotaPolicy.RUN_AS_NON_EXPEDITED_WORK_REQUEST)
             .build();
         WorkManager.getInstance(getApplicationContext()).enqueue(request);
         showNotice(getApplicationContext(), "ZEVON update downloading", "Version " + version + " is downloading in the background.", 1002);
