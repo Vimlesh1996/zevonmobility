@@ -20,6 +20,7 @@ async function check(force=false){
  if(!force&&cached&&Date.now()-cached.checkedAt<6*60*60*1000){if(cached.release&&newer(cached.release.version,cached.currentVersion))show(cached.release,cached.currentVersion);return;}
  try{
   const p=plugin();if(!p)return;
+  if(p.requestNotificationPermission){try{await p.requestNotificationPermission();}catch(e){console.warn('ZEVON notification permission:',e.message);}}
   const installed=await p.getAppVersion();
   const response=await fetch('https://api.github.com/repos/'+REPO+'/releases/latest',{headers:{Accept:'application/vnd.github+json'},cache:'no-store'});
   if(!response.ok)throw new Error('Update service is temporarily unavailable.');
