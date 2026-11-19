@@ -1,5 +1,6 @@
 package com.zevon.mobility.updater;
 
+import android.Manifest;
 import android.content.Intent;
 import android.net.Uri;
 import android.os.Build;
@@ -7,6 +8,8 @@ import android.provider.Settings;
 import androidx.core.content.FileProvider;
 import com.getcapacitor.*;
 import com.getcapacitor.annotation.*;
+import com.google.firebase.FirebaseApp;
+import com.google.firebase.messaging.FirebaseMessaging;
 import androidx.activity.result.ActivityResult;
 import java.io.*;
 import java.net.HttpURLConnection;
@@ -16,6 +19,31 @@ import java.util.Locale;
 
 @CapacitorPlugin(name = "ApkUpdater")
 public class ApkUpdaterPlugin extends Plugin {
+    @Override
+    public void load() {
+        super.load();
+        if (!FirebaseApp.getApps(getContext()).isEmpty()) {
+            FirebaseMessaging.getInstance().subscribeToTopic("zevon-app-updates")
+                .addOnFailureListener(error -> android.util.Log.w("ZEVONUpdater", "FCM topic subscription failed", error));
+        }
+    }
+
+    @Permission(strings = { Manifest.permission.POST_NOTIFICATIONS }, alias = "notifications")
+    @PluginMethod
+    public void requestNotificationPermission(PluginCall call) {
+        if (Build.VERSION.SDK_INT < 33 || getPermissionState("notifications") == PermissionState.GRANTED) {
+            JSObject result = new JSObject(); result.put("granted", true); call.resolve(result); return;
+        }
+        requestPermissionForAlias("notifications", call, "notificationPermissionCallback");
+    }
+
+    @PermissionCallback
+    private void notificationPermissionCallback(PluginCall call) {
+        JSObject result = new JSObject();
+        result.put("granted", getPermissionState("notifications") == PermissionState.GRANTED);
+        call.resolve(result);
+    }
+
     @PluginMethod
     public void getAppVersion(PluginCall call) {
         try {
