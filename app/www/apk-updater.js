@@ -24,7 +24,7 @@ async function check(force=false){
   const response=await fetch('https://api.github.com/repos/'+REPO+'/releases/latest',{headers:{Accept:'application/vnd.github+json'},cache:'no-store'});
   if(!response.ok)throw new Error('Update service is temporarily unavailable.');
   const data=await response.json();
-  const asset=(data.assets||[]).find(x=>/^ZEVON-Mobility-v[0-9]+\\.[0-9]+\\.[0-9]+\\.apk$/i.test(x.name));
+  const asset=(data.assets||[]).find(x=>/^ZEVON-Mobility-v[0-9]+\.[0-9]+\.[0-9]+\.apk$/i.test(x.name));
   const digest=String(asset?.digest||'').replace(/^sha256:/i,'');
   const version=String(data.tag_name||'').replace(/^v/i,'');
   const record=asset&&digest.length===64?{version,url:asset.browser_download_url,name:asset.name,sha256:digest,notes:String(data.body||'').slice(0,1000)}:null;
