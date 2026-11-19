@@ -1,6 +1,6 @@
 (() => {
 'use strict';
-const ENDPOINT='https://script.google.com/macros/s/AKfycbzlXJuFReuz1ywj4_KORsBMM7fSs_k5zb4euNA-5pOLEMGF9P9q2Bz3pkcspSs0AxhIx/exec';
+const ENDPOINT='https://script.google.com/macros/s/AKfycbzlXJuFReuz1ywj4_KORsBMM7fSs_k5zb4euNA-5pOLEMGF9Pq2Bz3pkcspSs0AxhIx/exec';
 const form=document.getElementById('booking-form'),statusBox=document.getElementById('form-status'),submitButton=document.getElementById('submit-btn'),submitLabel=submitButton.querySelector('.submit-label');
 const dateInput=document.getElementById('travel-date'),returnWrap=document.getElementById('return-date-wrap'),returnInput=document.getElementById('return-date'),durationWrap=document.getElementById('duration-wrap'),durationInput=document.getElementById('duration'),durationLabel=document.getElementById('duration-label'),durationHint=document.getElementById('duration-hint');
 const localToday=new Date(Date.now()-new Date().getTimezoneOffset()*60000).toISOString().slice(0,10);
