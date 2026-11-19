@@ -4,14 +4,14 @@ const ENDPOINT='https://script.google.com/macros/s/AKfycbzlXJuFReuz1ywj4_KORsBMM
 const form=document.getElementById('booking-form'),statusBox=document.getElementById('form-status'),submitButton=document.getElementById('submit-btn'),submitLabel=submitButton.querySelector('.submit-label');
 const dateInput=document.getElementById('travel-date'),returnWrap=document.getElementById('return-date-wrap'),returnInput=document.getElementById('return-date'),durationWrap=document.getElementById('duration-wrap'),durationInput=document.getElementById('duration'),durationLabel=document.getElementById('duration-label'),durationHint=document.getElementById('duration-hint');
 const localToday=new Date(Date.now()-new Date().getTimezoneOffset()*60000).toISOString().slice(0,10);
-dateInput.min=localToday;dateInput.value=localToday;returnInput.min=localToday;document.getElementById('year').textContent=new Date().getFullYear();
+dateInput.min=localToday;dateInput.value=localToday;returnInput.min=localToday;const yearNode=document.getElementById('year');if(yearNode)yearNode.textContent=new Date().getFullYear();
 function setTrip(value){
  document.getElementById('trip').value=value;
  document.querySelectorAll('[data-trip]').forEach(b=>b.classList.toggle('active',b.dataset.trip===value));
  const round=value==='Outstation Round-Trip',units={'Hourly Rental':['Hours','Enter required hours'],'Daily Rental':['Days','Enter number of days'],'Monthly Rental':['Months','Enter number of months']};
  returnWrap.hidden=!round;returnInput.required=round;
  durationWrap.hidden=!units[value];
- if(units[value]){durationLabel.textContent=units[value][0];durationHint.textContent=units[value][1];durationInput.value='1';}
+ if(units[value]){durationLabel.textContent=units[value][0];if(durationHint)durationHint.textContent=units[value][1];durationInput.value='1';}
  if(!round)returnInput.value='';
 }
 document.querySelectorAll('[data-trip]').forEach(b=>b.addEventListener('click',()=>setTrip(b.dataset.trip)));setTrip('Airport transfer');
