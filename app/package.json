@@ -1,6 +1,6 @@
 {
   "name": "zevon-mobility-app",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "private": true,
   "description": "ZEVON Mobility customer app for web and Android",
   "scripts": {
