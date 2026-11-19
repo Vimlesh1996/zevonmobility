@@ -7,7 +7,7 @@ import android.provider.Settings;
 import android.content.pm.PackageManager;
 import androidx.core.content.FileProvider;
 import com.getcapacitor.*;
-import com.getcapacitor.ActivityResult;
+import androidx.activity.result.ActivityResult;
 import com.getcapacitor.annotation.*;
 import java.io.*;
 import java.net.HttpURLConnection;
