@@ -23,13 +23,13 @@ test('ZEVON brand tokens and light surfaces are present',()=>{
 test('no CDN fonts or insecure updater implementation',()=>{
  assert.doesNotMatch(html,/fonts\.googleapis|fonts\.gstatic/);
  assert.doesNotMatch(css,/fonts\.googleapis|fonts\.gstatic/);
- assert.doesNotMatch(js,/fonts\\.googleapis|fonts\\.gstatic/);
- assert.match(updater,/releases\\/latest/);
+ assert.doesNotMatch(js,/fonts\.googleapis|fonts\.gstatic/);
+ assert.ok(updater.includes('releases/latest'));
  assert.match(updater,/sha256/);
  assert.match(nativeUpdater,/MessageDigest/);
  assert.match(nativeUpdater,/REQUEST_INSTALL_PACKAGES|canRequestPackageInstalls/);
  assert.equal(pkg.dependencies['@zevon/apk-updater'],'file:plugins/apk-updater');
- assert.match(html,/apk-updater\\.js/);
+ assert.ok(html.includes('apk-updater.js'));
 });
 test('customer app excludes admin and driver portal links',()=>{
  assert.doesNotMatch(html,/admin\/|driver\//i);
