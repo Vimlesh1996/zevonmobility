@@ -54,6 +54,25 @@ jobs:
       - name: Generate Android project
         run: npx cap add android
 
+      - name: Set Android version from package.json
+        run: |
+          python3 - <<'PY'
+          import json, re
+          from pathlib import Path
+          version = json.loads(Path("package.json").read_text())["version"]
+          parts = version.split(".")
+          if len(parts) != 3 or not all(x.isdigit() for x in parts):
+              raise SystemExit("app/package.json version must use MAJOR.MINOR.PATCH")
+          major, minor, patch = map(int, parts)
+          code = major * 1000000 + minor * 1000 + patch
+          gradle = Path("android/app/build.gradle")
+          source = gradle.read_text()
+          source, count = re.subn(r'(defaultConfig\\s*\\{)', r'\\1\\n        versionCode ' + str(code) + '\\n        versionName "' + version + '"', source, count=1)
+          if count != 1:
+              raise SystemExit("Unable to set Android version in generated Gradle file")
+          gradle.write_text(source)
+          PY
+
       - name: Sync web assets
         run: npx cap sync android
 
