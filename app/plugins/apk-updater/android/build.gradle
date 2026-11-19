@@ -1,0 +1,13 @@
+plugins {
+    id 'com.android.library'
+}
+
+android {
+    namespace 'com.zevon.mobility.updater'
+    compileSdk 35
+    defaultConfig { minSdk 23 }
+}
+
+dependencies {
+    implementation project(':capacitor-android')
+}
