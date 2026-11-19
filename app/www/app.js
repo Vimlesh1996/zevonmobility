@@ -93,12 +93,13 @@ form.addEventListener('submit',async e=>{
  finally{submitButton.disabled=false;submitLabel.textContent='Send trip enquiry';}
 });
 if('serviceWorker'in navigator&&location.protocol.startsWith('http'))window.addEventListener('load',()=>navigator.serviceWorker.register('./sw.js').catch(()=>{}));
+window.renderZevonRequests=renderRequests;
 })();
 
-renderRequests();
+window.renderZevonRequests?.();
 document.querySelectorAll('[data-nav]').forEach(button=>button.addEventListener('click',()=>{
  const name=button.dataset.nav;
- if(name==='requests')renderRequests();
+ if(name==='requests')window.renderZevonRequests?.();
  document.querySelectorAll('.screen').forEach(s=>s.classList.toggle('active',s.dataset.screen===name));
  document.querySelectorAll('[data-nav]').forEach(b=>{const active=b===button;b.classList.toggle('active',active);if(active)b.setAttribute('aria-current','page');else b.removeAttribute('aria-current');});
  window.scrollTo({top:0,behavior:'smooth'});
