@@ -44,4 +44,4 @@ BEFORE DEPLOYMENT
 2. Confirm it appears in Bookings with Booking_Status = NEW.
 3. Confirm the admin dashboard counts update.
 4. Delete the test row after verification.
-5. Keep sample calculator prices clearly labelled as samples until approved commercial rates are entered.
+5. The Google Sheets `Rate_Card` values were owner-approved for the booking quote flow. Any separate legacy/sample price display in `assets/site.js` must be reconciled against the approved Rate_Card before being presented as a live quote.
