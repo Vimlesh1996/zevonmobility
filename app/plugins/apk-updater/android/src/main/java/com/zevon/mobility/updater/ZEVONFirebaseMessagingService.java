@@ -34,7 +34,7 @@ public class ZEVONFirebaseMessagingService extends FirebaseMessagingService {
         String fileName = data.get("fileName");
         String version = data.get("version");
         if (url == null || digest == null || fileName == null || version == null) {
-            showNotice("ZEVON update available", "Open ZEVON to check the latest update.", 1001);
+            showNotice(getApplicationContext(), "ZEVON update available", "Open ZEVON to check the latest update.", 1001);
             return;
         }
         Data input = new Data.Builder()
@@ -51,7 +51,7 @@ public class ZEVONFirebaseMessagingService extends FirebaseMessagingService {
             .setConstraints(constraints)
             .build();
         WorkManager.getInstance(getApplicationContext()).enqueue(request);
-        showNotice("ZEVON update downloading", "Version " + version + " is downloading in the background.", 1002);
+        showNotice(getApplicationContext(), "ZEVON update downloading", "Version " + version + " is downloading in the background.", 1002);
     }
 
     static void showNotice(Context context, String title, String body, int id) {
