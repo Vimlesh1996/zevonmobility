@@ -17,7 +17,8 @@ jobs:
           set -euo pipefail
           mkdir -p signing-setup
           STORE_PASS="$(openssl rand -base64 36 | tr -d '\n')"
-          KEY_PASS="$(openssl rand -base64 36 | tr -d '\n')"
+          # PKCS12 keystores require the private-key password to match the store password.
+          KEY_PASS="$STORE_PASS"
           keytool -genkeypair -v \
             -keystore signing-setup/zevon-release.keystore \
             -storepass "$STORE_PASS" \
