@@ -29,7 +29,7 @@ This project is bound only to a separate staging spreadsheet. It does not call t
 8. Add an Admins test row using your own approved Google test email: Admin_ID=`ADM-STAGE-001`, Display_Name=`Staging Admin`, Email=`<your test email>`, Active=`TRUE`, Created_At/Updated_At=current date/time. Do not use an email unless you control it.
 9. Keep the driver test row in Drivers. A Google email listed in Admins signs in to the Admin Console; a Google email listed only in Drivers signs in to Driver Portal.
 10. Deploy → Manage deployments → Edit → New version → Deploy. This is staging only.
-9. Open the staging /exec URL and sign in using an approved test driver.
+11. Open the staging /exec URL and sign in using an approved test driver.
 
 ## Admin assignment console
 The Admins tab is a separate allowlist. Only an active Admins row can open the assignment console or call `createDriverAssignment`. The console creates synthetic staging assignments in Trip_Assignments and writes Trip_Events plus Driver_Audit. It does not read or modify production bookings. Never add a real driver/customer booking to this staging sheet.
