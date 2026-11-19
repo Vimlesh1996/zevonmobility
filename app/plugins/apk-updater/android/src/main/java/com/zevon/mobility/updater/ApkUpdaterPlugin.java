@@ -11,9 +11,19 @@ import com.getcapacitor.annotation.*;
 import java.io.*;
 import java.net.HttpURLConnection;
 import java.net.URL;
+import java.security.MessageDigest;
+import java.util.Locale;
 
 @CapacitorPlugin(name = "ApkUpdater")
 public class ApkUpdaterPlugin extends Plugin {
+    @PluginMethod
+    public void getAppVersion(PluginCall call) {
+        try {
+            String version = getContext().getPackageManager().getPackageInfo(getContext().getPackageName(), 0).versionName;
+            JSObject result = new JSObject(); result.put("version", version == null ? "0.0.0" : version); call.resolve(result);
+        } catch (Exception e) { call.reject("Unable to read installed app version.", e); }
+    }
+
     @PluginMethod
     public void canInstallPackages(PluginCall call) {
         boolean allowed = Build.VERSION.SDK_INT < 26 || getContext().getPackageManager().canRequestPackageInstalls();
@@ -43,6 +53,8 @@ public class ApkUpdaterPlugin extends Plugin {
     public void downloadAndInstall(PluginCall call) {
         String url = call.getString("url");
         String fileName = call.getString("fileName", "zevon-update.apk");
+        String expectedSha256 = call.getString("sha256");
+        if (expectedSha256 == null || !expectedSha256.matches("(?i)[a-f0-9]{64}")) { call.reject("A valid SHA-256 checksum is required."); return; }
         if (url == null || !url.startsWith("https://") || !url.contains("github.com/")) {
             call.reject("Only HTTPS GitHub release APK URLs are allowed."); return;
         }
@@ -78,6 +90,11 @@ public class ApkUpdaterPlugin extends Plugin {
                     fos.getFD().sync();
                 }
                 if (out.length() < 1024 * 1024) throw new IOException("Downloaded APK is unexpectedly small.");
+                MessageDigest digest = MessageDigest.getInstance("SHA-256");
+                try (InputStream verify = new FileInputStream(out)) { byte[] chunk = new byte[8192]; int n; while ((n = verify.read(chunk)) != -1) digest.update(chunk, 0, n); }
+                StringBuilder actual = new StringBuilder();
+                for (byte b : digest.digest()) actual.append(String.format(Locale.US, "%02x", b));
+                if (!actual.toString().equalsIgnoreCase(expectedSha256)) throw new IOException("APK checksum verification failed. Update cancelled.");
                 Uri uri = FileProvider.getUriForFile(getContext(),
                     getContext().getPackageName() + ".zevonupdater.fileprovider", out);
                 Intent install = new Intent(Intent.ACTION_VIEW);
