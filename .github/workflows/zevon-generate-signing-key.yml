@@ -1,0 +1,54 @@
+name: ZEVON Generate Release Signing Key
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  generate-signing-key:
+    name: Generate one-time permanent Android signing key
+    runs-on: ubuntu-latest
+    steps:
+      - name: Generate keystore and secret values
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p signing-setup
+          STORE_PASS="$(openssl rand -base64 36 | tr -d '\n')"
+          KEY_PASS="$(openssl rand -base64 36 | tr -d '\n')"
+          keytool -genkeypair -v \
+            -keystore signing-setup/zevon-release.keystore \
+            -storepass "$STORE_PASS" \
+            -keypass "$KEY_PASS" \
+            -alias zevon-release \
+            -keyalg RSA -keysize 4096 -validity 10000 \
+            -dname "CN=ZEVON Mobility, OU=Android, O=ZEVON, L=India, ST=Delhi, C=IN"
+          base64 -w 0 signing-setup/zevon-release.keystore > signing-setup/ANDROID_KEYSTORE_BASE64.txt
+          cat > signing-setup/GITHUB_SECRETS.txt <<EOF
+          ANDROID_KEY_ALIAS
+          zevon-release
+
+          ANDROID_KEYSTORE_PASSWORD
+          $STORE_PASS
+
+          ANDROID_KEY_PASSWORD
+          $KEY_PASS
+
+          ANDROID_KEYSTORE_BASE64
+          (copy the complete single-line content from ANDROID_KEYSTORE_BASE64.txt)
+          EOF
+          chmod 600 signing-setup/*
+          echo "Keystore generated. Secret values are stored only in the private workflow artifact, not printed to logs."
+      - name: Package one-time setup artifact
+        run: |
+          cd signing-setup
+          zip -q ../zevon-release-signing-setup.zip zevon-release.keystore ANDROID_KEYSTORE_BASE64.txt GITHUB_SECRETS.txt
+      - name: Upload one-time private signing setup
+        uses: actions/upload-artifact@v4
+        with:
+          name: zevon-release-signing-setup
+          path: zevon-release-signing-setup.zip
+          if-no-files-found: error
+          retention-days: 1
