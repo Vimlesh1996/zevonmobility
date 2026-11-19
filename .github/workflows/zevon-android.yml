@@ -55,6 +55,29 @@ jobs:
       - name: Generate Android project
         run: npx cap add android
 
+      - name: Configure Firebase Android client when google-services.json is available
+        run: |
+          if [ -f google-services.json ]; then
+            cp google-services.json android/app/google-services.json
+            python3 - <<'PY'
+          import re
+          from pathlib import Path
+          root = Path("android/build.gradle")
+          root_text = root.read_text()
+          if "com.google.gms:google-services" not in root_text:
+              root_text, count = re.subn(r'(dependencies\\s*\\{)', r"\\1\\n        classpath 'com.google.gms:google-services:4.4.4'", root_text, count=1)
+              if count != 1:
+                  raise SystemExit("Could not add Google Services Gradle classpath")
+              root.write_text(root_text)
+          app = Path("android/app/build.gradle")
+          app_text = app.read_text()
+          if "com.google.gms.google-services" not in app_text:
+              app.write_text(app_text + "\\napply plugin: 'com.google.gms.google-services'\\n")
+          PY
+          else
+            echo "::warning::google-services.json is missing; FCM client initialization will not work in this debug APK."
+          fi
+
       - name: Set Android version from package.json
         run: |
           python3 - <<'PY'
