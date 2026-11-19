@@ -2,6 +2,12 @@
 
 Android-first customer app. The production website root and live Apps Script deployment are not modified by this project branch.
 
+## Current milestone: M1.1 — Customer app testing build
+
+- Customer app version bumped to 1.0.1 for the next device test.
+- My Requests now stores the last 20 server-confirmed enquiry references locally on the same device. It does not claim a booking is confirmed or show a live backend status.
+- Home now explains the three-step enquiry process; More shows the app version.
+
 ## Current milestone: M1 — Foundation + Home
 
 - Capacitor 7 shell; application ID: `com.zevon.mobility`.
