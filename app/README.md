@@ -5,14 +5,14 @@ Separate customer-facing app and Android wrapper. The existing production websit
 ## Modules
 
 - Customer: `www/` — enquiry-first booking using the existing Apps Script customer endpoint.
-- Admin: `www/admin/` — operational dashboard shell. Private data and actions remain disabled until secure server-side role authentication is installed.
-- Driver: `www/driver/` — driver workspace shell. Trip data and status changes remain disabled until OTP/identity verification and assignment ownership checks are installed.
+- Admin: `www/admin/` — public-safe locked workspace shell. The separate Apps Script staging portal provides an admin-only synthetic assignment console; it is not yet wired into this app page.
+- Driver: `www/driver/` — public-safe locked workspace shell. The separate Apps Script staging portal provides allowlisted driver sign-in and synthetic trip workflow; it is not yet wired into this app page.
 
 ## Current backend integration
 
 The customer module uses the currently deployed Apps Script Web App URL already present in the public website. It uses the existing `booking` POST and `ack` receipt polling contract.
 
-The deployed Apps Script source is not in this repository. Admin and Driver endpoints are therefore specified in `backend/README.md` and must be implemented against the real script and spreadsheet headers in a staging deployment before enabling those modules. Do not expose the private Google Sheet or add admin/driver secrets to frontend code.
+The customer module uses the currently deployed production Apps Script endpoint. A separate staging Apps Script implementation is included at `backend/apps-script-staging/` for Google OAuth allowlisting, short-lived sessions, Admin assignment and Driver trip status tests against a separate staging spreadsheet. It is deliberately isolated from production and is not connected to the static `www/admin/` and `www/driver/` shells yet. Do not expose the private Google Sheet or add admin/driver secrets to frontend code.
 
 ## URLs after GitHub Pages deployment
 
@@ -43,7 +43,7 @@ A signed Play Store AAB requires a release keystore and GitHub Actions secrets. 
 
 ## Release safety
 
-- Develop on `zevon-app-v1`.
+- Use `zevon-final-v1` as the integrated release-candidate branch; keep `main` as production.
 - Review and merge via pull request.
 - Do not edit root website files, `CNAME`, sitemap, robots.txt, pricing scripts, or GitHub Pages settings as part of app work.
 - Do not switch GitHub Pages deployment settings in this phase.
