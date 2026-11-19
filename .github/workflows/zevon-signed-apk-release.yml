@@ -22,8 +22,10 @@ jobs:
       run:
         working-directory: app
     steps:
-      - name: Checkout
+      - name: Checkout customer app source
         uses: actions/checkout@v5
+        with:
+          ref: feature/customer-app-rebuild
 
       - name: Set up Node
         uses: actions/setup-node@v5
