@@ -1,95 +1,54 @@
 <!doctype html>
 <html lang="en">
 <head>
-  <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
-  <meta name="theme-color" content="#101b18">
-  <meta name="description" content="Plan airport transfers, outstation trips, rentals and corporate mobility with ZEVON.">
-  <title>ZEVON Mobility — Your journey, thoughtfully managed</title>
-  <link rel="manifest" href="./manifest.webmanifest">
-  <link rel="icon" href="https://zevonmobility.com/favicon-32.png">
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Manrope:wght@400;500;600;700;800&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="./styles.css">
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#08142E"><meta name="description" content="Every Journey. Every Vehicle. One ZEVON.">
+<title>ZEVON Mobility</title>
+<link rel="manifest" href="./manifest.webmanifest"><link rel="stylesheet" href="./styles.css">
 </head>
 <body>
 <div class="app-shell">
-  <header class="topbar">
-    <a class="brand" href="./" aria-label="ZEVON Mobility home"><span class="brand-mark">Z</span><span class="brand-name">ZEVON<small>MOBILITY</small></span></a>
-    <div class="top-actions"><a class="help-link" href="tel:+919648496425"> <span class="help-icon">↗</span><span><small>NEED HELP?</small><b>+91 96484 96425</b></span></a><a class="web-link" href="https://zevonmobility.com/">Main website ↗</a></div>
-  </header>
-
-  <main>
-    <section class="hero">
-      <div class="hero-copy">
-        <div class="eyebrow"><span class="pulse"></span> COMPLETE MOBILITY. ONE TRUSTED PARTNER.</div>
-        <h1>Every journey<br><em>starts better.</em></h1>
-        <p>Airport transfers, outstation travel, rentals and corporate mobility — tell us what you need and our team will take it forward.</p>
-        <div class="hero-points"><span>✓ Flexible vehicle categories</span><span>✓ Clear enquiry process</span><span>✓ Human support when you need it</span></div>
-      </div>
-      <div class="hero-visual" aria-label="ZEVON mobility service overview">
-        <div class="visual-orbit orbit-one"></div><div class="visual-orbit orbit-two"></div>
-        <div class="visual-card"><span class="visual-kicker">YOUR RIDE, YOUR WAY</span><div class="visual-route"><span class="route-dot"></span><span class="route-line"></span><span class="route-pin">⌖</span></div><div class="visual-bottom"><b>Plan with confidence.</b><small>One request. A team ready to help.</small></div></div>
-        <div class="floating-chip chip-top">✦ Airport & city rides</div><div class="floating-chip chip-bottom">↗ Business & group travel</div>
-      </div>
-    </section>
-
-    <section class="booking-section" aria-labelledby="booking-title">
-      <div class="section-intro"><div><div class="section-kicker">PLAN YOUR JOURNEY</div><h2 id="booking-title">Where would you like to go?</h2><p>Share a few details. We’ll review your request and get back to you.</p></div><div class="secure-note"><span>●</span> PRIVATE ENQUIRY</div></div>
-      <div class="booking-card">
-        <div class="trip-header"><span class="field-caption">CHOOSE YOUR SERVICE</span><span class="step-count">STEP <b>01</b> / 02</span></div>
-        <div class="trip-tabs" role="group" aria-label="Trip type">
-          <button class="trip-tab active" type="button" data-trip="Airport transfer"><span>✈</span>Airport</button>
-          <button class="trip-tab" type="button" data-trip="Outstation One-Way"><span>↗</span>One-way</button>
-          <button class="trip-tab" type="button" data-trip="Outstation Round-Trip"><span>⇄</span>Round trip</button>
-          <button class="trip-tab" type="button" data-trip="Hourly Rental"><span>◷</span>Hourly</button>
-          <button class="trip-tab" type="button" data-trip="Daily Rental"><span>▣</span>Daily</button>
-          <button class="trip-tab" type="button" data-trip="Monthly Rental"><span>▦</span>Monthly</button>
-        </div>
-        <form id="booking-form" novalidate>
-          <input type="hidden" name="trip" id="trip" value="Airport transfer">
-          <div class="form-section"><div class="form-section-title"><span class="section-number">1</span><div><b>Journey details</b><small>Where and when you need to travel</small></div></div>
-            <div class="field-grid">
-              <label class="field"><span>Pickup location</span><input name="pickup" id="pickup" required minlength="3" placeholder="Airport, address or city" autocomplete="street-address"><small class="field-hint">Where should we pick you up?</small></label>
-              <label class="field"><span>Drop location</span><input name="destination" id="destination" required minlength="3" placeholder="Destination or address" autocomplete="street-address"><small class="field-hint">Where are you heading?</small></label>
-              <label class="field"><span>Travel date</span><input name="date" id="travel-date" type="date" required></label>
-              <label class="field"><span>Pickup time</span><input name="time" id="travel-time" type="time" required value="10:00"></label>
-              <label class="field conditional" id="return-date-wrap" hidden><span>Return date</span><input name="returnDate" id="return-date" type="date"></label>
-              <label class="field conditional" id="duration-wrap" hidden><span id="duration-label">Duration</span><input name="duration" id="duration" type="number" min="1" max="365" value="1" inputmode="numeric"><small class="field-hint" id="duration-hint">Select the required duration</small></label>
-              <label class="field"><span>Passengers</span><select name="passengers" id="passengers"><option value="1">1 passenger</option><option value="2">2 passengers</option><option value="3">3 passengers</option><option value="4">4 passengers</option><option value="5">5 passengers</option><option value="6">6 passengers</option><option value="7">7 passengers</option><option value="8">8 passengers</option><option value="9">9 passengers</option><option value="10+">10+ passengers</option></select></label>
-              <label class="field"><span>Luggage</span><select name="luggage" id="luggage"><option value="">Not specified</option><option>Light</option><option>Standard</option><option>Heavy</option><option>Group luggage</option></select></label>
-            </div>
-          </div>
-          <div class="form-section"><div class="form-section-title"><span class="section-number">2</span><div><b>Vehicle preference</b><small>We’ll check options against your requirement</small></div></div>
-            <div class="field-grid">
-              <label class="field"><span>Vehicle category</span><select name="vehicle" id="vehicle"><option>Any suitable vehicle</option><option>Hatchback</option><option>Sedan</option><option>SUV / MUV</option><option>Premium / Luxury</option><option>Van / Traveller</option><option>Bus / Coach</option></select></label>
-              <label class="field"><span>Fuel preference</span><select name="fuel" id="fuel"><option value="">No preference</option><option>EV</option><option>CNG</option><option>Petrol</option><option>Diesel</option></select></label>
-              <label class="field full"><span>Company (optional)</span><input name="company" placeholder="Company or organisation"></label>
-            </div>
-          </div>
-          <div class="form-section"><div class="form-section-title"><span class="section-number">3</span><div><b>Your contact details</b><small>So our team can respond to your enquiry</small></div></div>
-            <div class="field-grid">
-              <label class="field"><span>Your name</span><input name="name" id="name" required minlength="2" autocomplete="name" placeholder="Full name"></label>
-              <label class="field"><span>Mobile number</span><input name="phone" id="phone" required inputmode="tel" autocomplete="tel" placeholder="+91 98765 43210"></label>
-              <label class="field full"><span>Email address (optional)</span><input name="email" type="email" autocomplete="email" placeholder="you@example.com"></label>
-              <label class="field full"><span>Additional requirements (optional)</span><textarea name="notes" rows="3" maxlength="1500" placeholder="Flight number, preferred vehicle, special assistance or anything else we should know…"></textarea></label>
-            </div>
-          </div>
-          <label class="honeypot" aria-hidden="true">Leave this field empty<input name="website" tabindex="-1" autocomplete="off"></label>
-          <button class="submit-btn" id="submit-btn" type="submit"><span class="submit-icon">↗</span><span class="submit-label">Send trip enquiry</span><b>→</b></button>
-          <div class="form-assurance"><span>🔒 Your details are used to respond to this enquiry.</span><span>Usually reviewed by our team during business hours.</span></div>
-          <p class="fine-print">This is an enquiry, not a confirmed booking. Availability, final pricing and trip details will be confirmed by the ZEVON team.</p>
-          <div id="form-status" class="form-status" role="status" aria-live="polite"></div>
-        </form>
-      </div>
-    </section>
-
-    <section class="how-section"><div class="section-kicker">SIMPLE & TRANSPARENT</div><h2>A clearer way to get moving.</h2><div class="steps"><article><span>01</span><b>Tell us what you need</b><p>Share your route, schedule and preferences.</p></article><article><span>02</span><b>We review your request</b><p>Our team checks the requirement and available options.</p></article><article><span>03</span><b>We get back to you</b><p>We contact you with the next steps and quotation.</p></article></div></section>
-  </main>
-  <footer><a class="brand footer-brand" href="./"><span class="brand-mark">Z</span><span class="brand-name">ZEVON<small>MOBILITY</small></span></a><span>© <span id="year"></span> ZEVON Mobility</span><span><a href="https://zevonmobility.com/privacy-policy/">Privacy</a> · <a href="https://zevonmobility.com/terms/">Terms</a> · <a href="tel:+919648496425">Support</a></span></footer>
+<header class="topbar">
+<a class="brand" href="#home" aria-label="ZEVON Mobility home"><span class="brand-mark">Z</span><span>ZEVON<small>MOBILITY</small></span></a>
+<a class="support" href="tel:+919648496425" aria-label="Call ZEVON support"><span class="support-icon" aria-hidden="true">⌕</span><span><small>NEED HELP?</small><b>+91 96484 96425</b></span></a>
+</header>
+<main id="app-main">
+<section class="screen active" id="screen-home" data-screen="home">
+<div class="hero"><div class="hero-content"><span class="eyebrow"><i></i> COMPLETE MOBILITY. ONE TRUSTED PARTNER.</span><h1>Every Journey.<br><em>Every Vehicle.</em></h1><p>One trusted partner for airport transfers, rentals, group travel and corporate mobility.</p><div class="hero-tagline">EVERY JOURNEY. EVERY VEHICLE. ONE ZEVON.</div></div><div class="hero-art" role="img" aria-label="Premium mobility vehicle illustration"><div class="hero-glow"></div><div class="road"></div><div class="car-shape"><span class="car-window"></span><span class="wheel wheel-one"></span><span class="wheel wheel-two"></span></div><span class="hero-chip">MOVE WITH ZEVON</span></div></div>
+<section class="booking-card" aria-labelledby="booking-title"><div class="card-heading"><div><span class="eyebrow red">PLAN YOUR JOURNEY</span><h2 id="booking-title">Where would you like to go?</h2><p>Choose a trip type to get started.</p></div><span class="secure-pill">PRIVATE ENQUIRY</span></div>
+<div class="trip-tabs" role="tablist" aria-label="Trip type">
+<button class="trip-tab active" role="tab" aria-selected="true" data-trip="Airport transfer">Airport</button><button class="trip-tab" role="tab" aria-selected="false" data-trip="Outstation One-Way">One-Way</button><button class="trip-tab" role="tab" aria-selected="false" data-trip="Outstation Round-Trip">Round-Trip</button><button class="trip-tab" role="tab" aria-selected="false" data-trip="Hourly Rental">Hourly</button><button class="trip-tab" role="tab" aria-selected="false" data-trip="Daily Rental">Daily</button><button class="trip-tab" role="tab" aria-selected="false" data-trip="Monthly Rental">Monthly</button>
 </div>
-<script src="./capacitor.js"></script>
-<script src="./app.js"></script>
-</body>
-</html>
+<form id="booking-form" novalidate>
+<input type="hidden" name="trip" id="trip" value="Airport transfer">
+<div class="form-grid">
+<label class="field"><span>Pickup location</span><input name="pickup" id="pickup" required minlength="3" placeholder="Enter pickup location" autocomplete="street-address"></label>
+<label class="field"><span>Drop location</span><input name="destination" id="destination" required minlength="3" placeholder="Enter destination" autocomplete="street-address"></label>
+<label class="field"><span>Travel date</span><input name="date" id="travel-date" type="date" required></label>
+<label class="field"><span>Pickup time</span><input name="time" id="travel-time" type="time" required value="10:00"></label>
+<label class="field conditional" id="return-date-wrap" hidden><span>Return date</span><input name="returnDate" id="return-date" type="date"></label>
+<label class="field conditional" id="duration-wrap" hidden><span id="duration-label">Duration</span><input name="duration" id="duration" type="number" min="1" max="365" value="1" inputmode="numeric"></label>
+<label class="field"><span>Passengers</span><select name="passengers" id="passengers"><option>1</option><option>2</option><option>3</option><option>4</option><option>5</option><option>6</option><option>7</option><option>8</option></select></label>
+<label class="field"><span>Vehicle category</span><select name="vehicle" id="vehicle"><option>Any suitable vehicle</option><option>Hatchback</option><option>Sedan</option><option>SUV / MUV</option><option>Premium / Luxury</option><option>Van / Traveller</option><option>Bus / Coach</option></select></label>
+</div>
+<label class="honeypot" aria-hidden="true">Leave empty<input name="website" tabindex="-1" autocomplete="off"></label>
+<button class="primary-button" id="submit-btn" type="submit"><span class="submit-label">Continue with enquiry</span><span aria-hidden="true">→</span></button>
+<p class="fine-print">This is an enquiry, not a confirmed booking. Availability and final pricing will be confirmed by the ZEVON team.</p><div id="form-status" class="form-status" role="status" aria-live="polite"></div>
+</form></section>
+<section class="services"><div class="section-title"><span class="eyebrow red">EXPLORE ZEVON</span><h2>Mobility for every plan.</h2></div><div class="service-grid">
+<article class="service-card"><div class="service-visual airport" aria-hidden="true"><span class="line-icon">✈</span></div><b>Airport transfers</b><p>Plan your airport pickup or drop.</p></article>
+<article class="service-card"><div class="service-visual rental" aria-hidden="true"><span class="line-icon">▱</span></div><b>Car rentals</b><p>Travel by the hour, day or month.</p></article>
+<article class="service-card"><div class="service-visual bus" aria-hidden="true"><span class="line-icon">▤</span></div><b>Bus & group travel</b><p>Options for teams and group journeys.</p></article>
+<article class="service-card"><div class="service-visual corporate" aria-hidden="true"><span class="line-icon">⌂</span></div><b>Corporate mobility</b><p>Transport solutions for organisations.</p></article>
+</div></section>
+<section class="categories"><div class="section-title"><span class="eyebrow red">VEHICLE CATEGORIES</span><h2>Find the right fit.</h2></div><div class="category-grid"><div class="category"><span>01</span><b>Hatchback</b></div><div class="category"><span>02</span><b>Sedan</b></div><div class="category"><span>03</span><b>SUV / MUV</b></div><div class="category"><span>04</span><b>Premium / Luxury</b></div><div class="category"><span>05</span><b>Van / Traveller</b></div><div class="category"><span>06</span><b>Bus / Coach</b></div></div></section>
+<section class="why"><span class="eyebrow">THE ZEVON DIFFERENCE</span><h2>One partner. Multiple ways to move.</h2><p>Tell us what your journey needs. Our team reviews your enquiry and helps you take the next step.</p><div class="why-points"><span>Clear enquiry process</span><span>Multiple mobility services</span><span>Human support</span></div></section>
+</section>
+<section class="screen" id="screen-book" data-screen="book"><div class="page-heading"><span class="eyebrow red">BOOK WITH ZEVON</span><h1>Plan your next journey.</h1><p>Start with your pickup, destination and travel date.</p></div><button class="primary-button" data-go-home>Start a trip enquiry <span>→</span></button></section>
+<section class="screen" id="screen-requests" data-screen="requests"><div class="page-heading"><span class="eyebrow red">YOUR ACTIVITY</span><h1>My Requests</h1><p>Keep track of enquiries submitted from this device.</p></div><div class="empty-card"><span class="empty-symbol">▤</span><b>No saved requests yet</b><p>Your submitted enquiry references will appear here when request history is connected.</p><button class="secondary-button" data-go-home>Plan a journey</button></div></section>
+<section class="screen" id="screen-offers" data-screen="offers"><div class="page-heading"><span class="eyebrow red">ZEVON OFFERS</span><h1>Offers for your journey</h1><p>Only currently active offers from ZEVON will appear here.</p></div><div class="empty-card"><span class="empty-symbol">◇</span><b>No offers available right now</b><p>Please check again later or send us your travel requirement.</p></div></section>
+<section class="screen" id="screen-more" data-screen="more"><div class="page-heading"><span class="eyebrow red">MORE FROM ZEVON</span><h1>Here to help you move.</h1></div><div class="more-list"><a href="https://zevonmobility.com/">Visit ZEVON website <span>↗</span></a><a href="tel:+919648496425">Call customer support <span>↗</span></a><a href="https://zevonmobility.com/privacy-policy/">Privacy policy <span>↗</span></a><a href="https://zevonmobility.com/terms/">Terms & conditions <span>↗</span></a><div class="app-version">ZEVON Mobility · Customer App</div></div></section>
+</main>
+<nav class="bottom-nav" aria-label="Main navigation"><button class="nav-item active" data-nav="home" aria-current="page"><span aria-hidden="true">⌂</span><small>Home</small></button><button class="nav-item" data-nav="book"><span aria-hidden="true">＋</span><small>Book</small></button><button class="nav-item" data-nav="requests"><span aria-hidden="true">▤</span><small>My Requests</small></button><button class="nav-item" data-nav="offers"><span aria-hidden="true">◇</span><small>Offers</small></button><button class="nav-item" data-nav="more"><span aria-hidden="true">⋯</span><small>More</small></button></nav>
+</div><script src="./capacitor.js"></script><script src="./app.js"></script>
+</body></html>
