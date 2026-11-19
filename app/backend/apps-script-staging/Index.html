@@ -1,0 +1,32 @@
+<!doctype html>
+<html>
+<head>
+  <base target="_top">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta name="theme-color" content="#10201b">
+  <title>ZEVON Driver Sign-In — Staging</title>
+  <style>
+    *{box-sizing:border-box}body{margin:0;min-height:100vh;background:#f3f6f4;color:#14231e;font:16px Arial,sans-serif;display:grid;place-items:center;padding:24px}
+    main{width:min(100%,460px);background:#fff;border:1px solid #dce5df;border-radius:22px;padding:30px;box-shadow:0 16px 50px #13251a12}
+    .brand{font-weight:800;letter-spacing:2px;color:#176b4a}.tag{font-size:12px;color:#738078;letter-spacing:1.5px;margin-top:5px}
+    h1{font-size:28px;margin:28px 0 8px}.muted{color:#627068;line-height:1.55;font-size:14px}
+    .action{display:inline-block;margin:24px 0 12px;padding:14px 22px;border-radius:9px;background:#176b4a;color:#fff;text-decoration:none;font-weight:700}
+    #status{padding:12px;border-radius:10px;background:#f1f4f2;color:#435148;font-size:14px;line-height:1.5}
+    .small{font-size:12px;color:#7b877f;margin-top:24px}.error{background:#fff0ef!important;color:#9c2923!important}
+  </style>
+</head>
+<body>
+<main>
+  <div class="brand">ZEVON MOBILITY</div><div class="tag">DRIVER PORTAL · STAGING</div>
+  <h1>Driver sign-in</h1>
+  <p class="muted">Continue with the Google account registered by ZEVON Admin. Only active, approved driver accounts can receive a staging session.</p>
+  <? if (authUrl) { ?>
+    <a class="action" href="<?= authUrl ?>" target="_top" rel="noopener">Continue with Google</a>
+    <div id="status">Ready. Select your approved Google account to continue.</div>
+  <? } else { ?>
+    <div id="status" class="error"><?= configError ?></div>
+  <? } ?>
+  <p class="small">STAGING ONLY · No customer booking data · No production system connection</p>
+</main>
+</body>
+</html>

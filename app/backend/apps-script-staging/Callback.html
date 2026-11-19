@@ -1,0 +1,90 @@
+<!doctype html>
+<html>
+<head><base target="_top"><meta name="viewport" content="width=device-width,initial-scale=1"><title>ZEVON Driver Portal — Staging</title>
+<style>
+*{box-sizing:border-box}body{margin:0;background:#f3f6f4;color:#14231e;font:15px Arial,sans-serif}.wrap{max-width:1080px;margin:auto;padding:22px}.brand{font-weight:800;letter-spacing:2px;color:#176b4a}.tag,.muted,.small{color:#718078}.tag{font-size:11px;letter-spacing:1.5px;margin-top:5px}.top{display:flex;justify-content:space-between;align-items:center;gap:16px;flex-wrap:wrap;margin-bottom:22px}.panel{background:#fff;border:1px solid #dce5df;border-radius:16px;padding:20px;margin:14px 0}.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:12px}.metric{background:#f6f8f6;border-radius:12px;padding:15px}.metric b{display:block;font-size:26px;margin-top:7px}.nav{display:flex;gap:8px;flex-wrap:wrap;margin:16px 0}.nav button,.btn{border:0;border-radius:9px;padding:11px 15px;background:#176b4a;color:white;font-weight:700;cursor:pointer}.nav button{background:#e7eee9;color:#244336}.nav button.active{background:#176b4a;color:#fff}.btn.secondary{background:#e7eee9;color:#244336}.btn.danger{background:#9c342d}.btn:disabled{opacity:.5;cursor:wait}.trip{border:1px solid #e1e8e3;border-radius:12px;padding:15px;margin:10px 0}.triphead{display:flex;justify-content:space-between;gap:10px;flex-wrap:wrap}.pill{font-size:11px;font-weight:bold;background:#e9f3ec;color:#24583c;padding:5px 8px;border-radius:20px}.actions{display:flex;gap:8px;flex-wrap:wrap;margin-top:12px}.hidden{display:none!important}.error{background:#fff0ef!important;color:#9c2923!important}.small{font-size:12px;margin-top:24px}.empty{padding:25px;text-align:center;color:#718078;background:#f7f9f7;border-radius:12px}input,textarea{width:100%;padding:11px;border:1px solid #ccd8d0;border-radius:8px;margin:6px 0 12px;font:inherit}
+</style></head><body><div class="wrap">
+<div class="top"><div><div class="brand">ZEVON MOBILITY</div><div class="tag">DRIVER PORTAL · STAGING</div></div>
+<? if (ok) { ?><button id="logout" class="btn secondary">Sign out</button><? } ?></div>
+<? if (!ok) { ?><section class="panel"><h2>Sign-in not completed</h2><p id="status" class="error"><?= message ?></p><p class="small">STAGING ONLY · No customer booking data · No production system connection</p></section><? } else if (accountType === 'ADMIN') { ?>
+<section class="panel"><div class="muted">ADMIN CONSOLE · STAGING</div><h2><?= driverName ?></h2><div class="muted">Admin ID: <?= driverId ?> · <?= driverEmail ?></div><p id="adminStatus" class="muted">Loading admin workspace…</p></section>
+<section class="panel"><h3>Create driver assignment</h3><form id="assignForm">
+<label>Active driver</label><select id="driverSelect" required style="width:100%;padding:11px;margin:6px 0 12px;border:1px solid #ccd8d0;border-radius:8px"></select>
+<label>Staging booking reference</label><input id="bookingId" required placeholder="STAGE-BOOKING-002">
+<label>Trip date</label><input id="tripDate" type="date" required>
+<label>Pickup time</label><input id="pickupTime" type="time" required>
+<label>Pickup location</label><input id="pickup" required placeholder="STAGING PICKUP">
+<label>Drop location</label><input id="drop" required placeholder="STAGING DROP">
+<label>Passenger count</label><input id="passengers" type="number" min="1" max="99" value="1" required>
+<label>Vehicle display</label><input id="vehicle" value="Staging vehicle">
+<label>Notes</label><textarea id="notes" rows="2" maxlength="300"></textarea>
+<button class="btn" id="assignButton" type="submit">Assign trip</button>
+</form></section>
+<section class="panel"><h3>Staging assignments</h3><div id="adminTrips"></div></section>
+<p class="small">STAGING ONLY · Synthetic assignments only · No production booking data</p>
+<script>
+const token = <?!= JSON.stringify(sessionToken) ?>;
+const $ = id => document.getElementById(id);
+function adminStatus(s,err){$('adminStatus').textContent=s;$('adminStatus').className=err?'error':'muted';}
+function loadAdmin(){google.script.run.withSuccessHandler(d=>{const sel=$('driverSelect');sel.replaceChildren();d.drivers.forEach(x=>{const o=document.createElement('option');o.value=x.driverId;o.textContent=x.name+' ('+x.driverId+')';sel.append(o);});const box=$('adminTrips');box.replaceChildren();if(!d.trips.length){box.textContent='No staging assignments yet.';}d.trips.forEach(t=>{const el=document.createElement('div');el.className='trip';const b=document.createElement('b');b.textContent=t.assignmentId+' · '+t.status;el.append(b);const p=document.createElement('p');p.textContent=t.driverId+' · '+t.tripDate+' '+t.pickupTime+' · '+t.pickupLocation+' → '+t.dropLocation;el.append(p);box.append(el);});adminStatus('Admin access verified. '+d.drivers.length+' active driver(s), '+d.trips.length+' assignment(s).');}).withFailureHandler(e=>adminStatus(e.message||'Could not load admin workspace.',true)).getAdminPortalData(token);}
+$('assignForm').addEventListener('submit',e=>{e.preventDefault();const btn=$('assignButton');btn.disabled=true;const p={driverId:$('driverSelect').value,bookingId:$('bookingId').value,tripDate:$('tripDate').value,pickupTime:$('pickupTime').value,pickupLocation:$('pickup').value,dropLocation:$('drop').value,passengerCount:$('passengers').value,vehicleDisplay:$('vehicle').value,notes:$('notes').value};google.script.run.withSuccessHandler(r=>{btn.disabled=false;adminStatus('Assignment created: '+r.assignmentId);$('assignForm').reset();$('passengers').value=1;$('vehicle').value='Staging vehicle';loadAdmin();}).withFailureHandler(err=>{btn.disabled=false;adminStatus(err.message||'Assignment failed.',true);}).createDriverAssignment(token,p);});
+$('logout').addEventListener('click',function(){this.disabled=true;google.script.run.withSuccessHandler(()=>location.reload()).withFailureHandler(e=>{this.disabled=false;adminStatus(e.message||'Sign-out failed.',true);}).logoutDriver(token);});
+loadAdmin();
+</script>
+<? } else { ?>
+<section class="panel"><div class="muted">WELCOME BACK</div><h2 id="driverName"><?= driverName ?></h2><div class="muted">Driver ID: <span id="driverId"><?= driverId ?></span> · <span id="driverEmail">Loading profile…</span></div><div id="status" class="muted" style="margin-top:10px">Loading your staging dashboard…</div></section>
+<div class="nav"><button class="active" data-view="dashboard">Dashboard</button><button data-view="trips">My Trips</button><button data-view="history">Trip History</button><button data-view="profile">Profile</button></div>
+<section id="dashboard" class="view"><div class="grid">
+<div class="metric">Assigned <b id="countAssigned">0</b></div><div class="metric">Accepted <b id="countAccepted">0</b></div><div class="metric">Started <b id="countStarted">0</b></div><div class="metric">Completed <b id="countCompleted">0</b></div>
+</div><div class="panel"><h3>Upcoming trips</h3><div id="upcoming"></div></div></section>
+<section id="trips" class="view hidden"><div class="panel"><h3>My active trips</h3><div id="activeTrips"></div></div></section>
+<section id="history" class="view hidden"><div class="panel"><h3>Trip history</h3><div id="pastTrips"></div></div></section>
+<section id="profile" class="view hidden"><div class="panel"><h3>Driver profile</h3><p><b>Name:</b> <span id="profileName"></span></p><p><b>Driver ID:</b> <span id="profileId"></span></p><p><b>Registered email:</b> <span id="profileEmail"></span></p><p><b>Access:</b> Active staging driver</p><p class="muted">Your trip records are filtered by your verified Driver ID on the server.</p></div></section>
+<p class="small">STAGING ONLY · No customer booking data · No production system connection</p>
+<script>
+const token = <?!= JSON.stringify(sessionToken) ?>;
+let portal = null;
+const $ = id => document.getElementById(id);
+function node(tag, text, cls){const el=document.createElement(tag);if(text!==undefined)el.textContent=text;if(cls)el.className=cls;return el;}
+function showStatus(message,error){$('status').textContent=message;$('status').className=error?'error':'muted';}
+function switchView(name){document.querySelectorAll('.view').forEach(v=>v.classList.toggle('hidden',v.id!==name));document.querySelectorAll('.nav button').forEach(b=>b.classList.toggle('active',b.dataset.view===name));}
+document.querySelectorAll('.nav button').forEach(b=>b.addEventListener('click',()=>switchView(b.dataset.view)));
+function tripCard(t){
+ const card=node('article',undefined,'trip'), head=node('div',undefined,'triphead'), left=node('div'), status=node('span',t.status,'pill');
+ left.append(node('b',t.assignmentId+' · '+(t.tripDate||'Date not set')));left.append(node('div',(t.pickupTime||'Time not set')+' · '+t.passengerCount+' passenger(s)','muted'));
+ head.append(left,status);card.append(head);
+ card.append(node('p','Pickup: '+(t.pickupLocation||'Not provided')));
+ card.append(node('p','Drop: '+(t.dropLocation||'Not provided')));
+ if(t.vehicleDisplay)card.append(node('p','Vehicle: '+t.vehicleDisplay));
+ if(t.notes)card.append(node('p','Note: '+t.notes,'muted'));
+ const actions=node('div',undefined,'actions');
+ const addAction=(label,action,cls)=>{const b=node('button',label,'btn '+(cls||''));b.addEventListener('click',()=>changeStatus(t,action,b));actions.append(b);};
+ if(t.status==='ASSIGNED'){addAction('Accept','ACCEPT');addAction('Reject','REJECT','danger');}
+ if(t.status==='ACCEPTED')addAction('Start trip','START');
+ if(t.status==='STARTED')addAction('Complete trip','COMPLETE');
+ if(actions.childNodes.length)card.append(actions);
+ return card;
+}
+function fillList(id,items,emptyText){const box=$(id);box.replaceChildren();if(!items.length){box.append(node('div',emptyText,'empty'));return;}items.forEach(t=>box.append(tripCard(t)));}
+function render(){
+ const d=portal.driver,c=portal.counts; $('driverEmail').textContent=d.email;
+ $('profileName').textContent=d.displayName;$('profileId').textContent=d.driverId;$('profileEmail').textContent=d.email;
+ ['assigned','accepted','started','completed'].forEach(k=>$('count'+k[0].toUpperCase()+k.slice(1)).textContent=c[k]||0);
+ const active=portal.trips.filter(t=>!['COMPLETED','REJECTED'].includes(t.status));
+ const past=portal.trips.filter(t=>['COMPLETED','REJECTED'].includes(t.status));
+ fillList('upcoming',active.slice(0,3),'No upcoming trips assigned yet.');
+ fillList('activeTrips',active,'No active trips assigned to your account.');
+ fillList('pastTrips',past,'No trip history available yet.');
+ showStatus('Dashboard loaded. Only your own assigned trips are shown.');
+}
+function loadPortal(){google.script.run.withSuccessHandler(data=>{portal=data;render();}).withFailureHandler(err=>showStatus(err.message||'Could not load driver portal.',true)).getDriverPortalData(token);}
+function changeStatus(t,action,button){
+ let reason='';if(action==='REJECT'){reason=prompt('Please enter the reason for rejecting this trip:')||'';if(!reason.trim())return;}
+ button.disabled=true;
+ google.script.run.withSuccessHandler(result=>{showStatus('Trip updated: '+result.status);loadPortal();}).withFailureHandler(err=>{button.disabled=false;showStatus(err.message||'Trip update failed.',true);}).updateDriverTripStatus(token,t.assignmentId,action,reason);
+}
+$('logout').addEventListener('click',function(){this.disabled=true;google.script.run.withSuccessHandler(()=>{document.body.innerHTML='<div class="wrap"><section class="panel"><h2>You have signed out</h2><p>Your staging session has been revoked.</p><a href="'+location.href.split('?')[0]+'">Return to sign in</a></section></div>';}).withFailureHandler(err=>{this.disabled=false;showStatus(err.message||'Sign-out failed.',true);}).logoutDriver(token);});
+loadPortal();
+</script>
+<? } ?>
+</div></body></html>

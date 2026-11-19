@@ -1,0 +1,20 @@
+<!doctype html>
+<html lang="en">
+<head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="theme-color" content="#0b1714"><title>ZEVON Admin Portal</title><link rel="stylesheet" href="../modules.css"></head>
+<body><div class="module-shell">
+<header class="module-top"><a class="module-brand" href="../"><b>Z</b><span>ZEVON<small>ADMIN PORTAL</small></span></a><nav class="module-nav"><a href="../">Customer</a><a class="active" href="./">Admin</a><a href="../driver/">Driver</a></nav></header>
+<main class="module-main">
+<div class="module-heading"><div><div class="kicker">OPERATIONS CONTROL CENTRE</div><h1>Admin dashboard</h1><p class="subtext">Manage trip enquiries, allocations, fleet records and operational performance from one secure workspace.</p></div><span class="role-pill">ADMIN WORKSPACE</span></div>
+<div class="notice"><strong><span class="status-dot"></span>Secure backend connection pending</strong>The current production Apps Script exposes customer enquiry, public quote and receipt-check actions only. Admin access is deliberately locked until role-based authentication and authorised server-side endpoints are installed. No private booking or customer data is loaded into this page.</div>
+<div class="stat-grid">
+<article class="stat-card"><div class="stat-label">New enquiries</div><div class="stat-value">—</div><div class="stat-note">Awaiting authorised data API</div></article>
+<article class="stat-card"><div class="stat-label">Trips allocated</div><div class="stat-value">—</div><div class="stat-note">Awaiting authorised data API</div></article>
+<article class="stat-card"><div class="stat-label">Active drivers</div><div class="stat-value">—</div><div class="stat-note">Awaiting authorised data API</div></article>
+<article class="stat-card"><div class="stat-label">Vehicles available</div><div class="stat-value">—</div><div class="stat-note">Awaiting authorised data API</div></article>
+</div>
+<div class="panel-grid">
+<section class="panel"><h2>Booking management</h2><div class="empty-state"><b>Bookings will appear here</b>View new enquiries, review trip details, approve quotations and assign drivers once the secure Admin API is enabled.</div></section>
+<section class="panel"><h2>Quick actions</h2><div class="module-actions"><button class="module-button" disabled>Manage bookings</button><button class="module-button" disabled>Assign driver</button><button class="module-button" disabled>Manage fleet</button><button class="module-button" disabled>View reports</button></div><p class="subtext">Actions activate after Admin sign-in and backend permissions are configured.</p></section>
+</div>
+<section class="panel" style="margin-top:14px"><h2>Access</h2><div class="form-row"><div class="module-field"><label>Admin identity</label><input value="Company-authorised account" disabled></div><div class="module-field"><label>Authentication</label><input value="Google identity + server-side role check (planned)" disabled></div></div><div class="module-actions" style="margin-top:14px"><button class="module-button primary" disabled>Sign in with Google</button></div><p class="subtext">No passwords or admin tokens are stored in this app. Access will be enabled only for accounts explicitly allowlisted by the ZEVON owner.</p></section>
+</main><footer class="module-footer"><span>© 2026 ZEVON Mobility</span><a href="https://zevonmobility.com/">Main website ↗</a></footer></div></body></html>
