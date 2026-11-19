@@ -80,8 +80,7 @@ public class ApkUpdaterPlugin extends Plugin {
                 if (type != null && !type.toLowerCase().contains("octet-stream") && !type.toLowerCase().contains("application/vnd.android.package-archive")) {
                     throw new IOException("The release asset did not return an APK download.");
                 }
-                File dir = new File(getContext().getCacheDir(), "apk-updates");
-                if (!dir.exists() && !dir.mkdirs()) throw new IOException("Cannot create update cache.");
+                File dir = getContext().getCacheDir();
                 out = new File(dir, safeName);
                 try (InputStream in = new BufferedInputStream(connection.getInputStream());
                      FileOutputStream fos = new FileOutputStream(out)) {
@@ -96,7 +95,7 @@ public class ApkUpdaterPlugin extends Plugin {
                 for (byte b : digest.digest()) actual.append(String.format(Locale.US, "%02x", b));
                 if (!actual.toString().equalsIgnoreCase(expectedSha256)) throw new IOException("APK checksum verification failed. Update cancelled.");
                 Uri uri = FileProvider.getUriForFile(getContext(),
-                    getContext().getPackageName() + ".zevonupdater.fileprovider", out);
+                    getContext().getPackageName() + ".fileprovider", out);
                 Intent install = new Intent(Intent.ACTION_VIEW);
                 install.setDataAndType(uri, "application/vnd.android.package-archive");
                 install.addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION | Intent.FLAG_ACTIVITY_NEW_TASK);
