@@ -1,4 +1,4 @@
-const CACHE = 'zevon-app-shell-v1';
+const CACHE = 'zevon-app-shell-v2';
 const SHELL = ['./', './index.html', './styles.css', './app.js', './manifest.webmanifest'];
 self.addEventListener('install', event => {
   event.waitUntil(caches.open(CACHE).then(cache => cache.addAll(SHELL)).then(() => self.skipWaiting()));
