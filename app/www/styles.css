@@ -7,3 +7,15 @@
 .bottom-nav{position:fixed;bottom:0;left:0;right:0;z-index:10;display:grid;grid-template-columns:repeat(5,1fr);padding:7px max(12px,env(safe-area-inset-right)) calc(7px + env(safe-area-inset-bottom)) max(12px,env(safe-area-inset-left));background:#ffffffed;backdrop-filter:blur(18px);border-top:1px solid var(--line);box-shadow:0 -8px 25px #08142e0b}.nav-item{border:0;background:transparent;color:#798398;min-height:48px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;cursor:pointer}.nav-item span{font-size:19px;line-height:20px}.nav-item small{font-size:9px;font-weight:700}.nav-item.active{color:var(--red)}.nav-item:focus-visible,.trip-tab:focus-visible,.primary-button:focus-visible{outline:3px solid #da0b1755;outline-offset:2px}
 @media(max-width:650px){.app-shell{padding:0 14px 100px}.topbar{height:63px}.hero{grid-template-columns:1fr;padding:25px 22px 10px;border-radius:20px;min-height:0}.hero h1{font-size:37px}.hero-art{min-height:120px}.car-shape{transform:scale(.75) skewX(-8deg)}.hero-chip{right:5px;top:0}.booking-card{padding:17px 13px;margin-top:-7px;border-radius:18px}.card-heading h2{font-size:20px}.secure-pill{font-size:7px;padding:7px}.trip-tabs{grid-template-columns:repeat(3,1fr);gap:6px;margin:15px 0}.trip-tab{min-height:44px}.form-grid{gap:8px}.field{padding:10px}.field input,.field select{font-size:12px}.service-grid{grid-template-columns:repeat(2,1fr)}.service-visual{height:88px}.category-grid{grid-template-columns:repeat(2,1fr)}.why{padding:20px}.page-heading{padding-top:27px}}
 @media(min-width:900px){.hero{margin-top:8px}.booking-card{max-width:940px;margin-left:auto;margin-right:auto}.services,.categories,.why{max-width:940px;margin-left:auto;margin-right:auto}}
+
+/* Secure in-app Android update notice */
+.update-banner{display:flex;align-items:center;gap:12px;margin:0 0 14px;padding:13px 15px;border:1px solid #d8a1a5;border-radius:14px;background:#fff7f7;color:#08142e;box-shadow:0 8px 22px #08142e0b}
+.update-banner[hidden]{display:none}
+.update-copy{display:flex;flex:1;min-width:0;flex-direction:column;gap:4px}
+.update-kicker{font-size:9px;font-weight:900;letter-spacing:.16em;color:#da0b17}
+.update-copy b{font-size:13px;font-weight:800}
+.update-copy small{font-size:10px;line-height:1.5;color:#536078;overflow-wrap:anywhere}
+.update-banner button{border:0;border-radius:9px;background:#da0b17;color:white;padding:10px 12px;font-size:10px;font-weight:800;cursor:pointer;white-space:nowrap}
+.update-banner button:disabled{opacity:.6}
+.update-banner #update-dismiss{background:transparent;color:#536078;font-size:20px;padding:2px 5px}
+@media(max-width:560px){.update-banner{gap:7px;padding:11px 9px}.update-banner button{padding:9px;font-size:9px}}
