@@ -90,7 +90,7 @@ jobs:
                       storeFile file("../../zevon-release.keystore")
                       storePassword System.getenv("STORE_PASSWORD")
                       keyAlias System.getenv("KEY_ALIAS")
-                      # PKCS12 uses the store password for the private key as well.
+                      // PKCS12 uses the store password for the private key as well.
                       keyPassword System.getenv("STORE_PASSWORD")
                   }
               }
