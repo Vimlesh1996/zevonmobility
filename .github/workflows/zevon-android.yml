@@ -67,7 +67,7 @@ jobs:
           code = major * 1000000 + minor * 1000 + patch
           gradle = Path("android/app/build.gradle")
           source = gradle.read_text()
-          source, count = re.subn(r'(defaultConfig\\s*\\{)', r'\\1\\n        versionCode ' + str(code) + '\\n        versionName "' + version + '"', source, count=1)
+          source, count = re.subn(r'(defaultConfig\s*\{)', r'\1\n        versionCode ' + str(code) + '\n        versionName "' + version + '"', source, count=1)
           if count != 1:
               raise SystemExit("Unable to set Android version in generated Gradle file")
           gradle.write_text(source)
