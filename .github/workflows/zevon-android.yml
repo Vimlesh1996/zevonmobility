@@ -6,6 +6,7 @@ on:
     branches:
       - zevon-app-v1
       - zevon-final-v1
+      - feature/direct-apk-auto-update
     paths:
       - 'app/**'
       - '.github/workflows/zevon-android.yml'

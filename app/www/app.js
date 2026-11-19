@@ -70,3 +70,65 @@ form.addEventListener('submit',async e=>{
 });
 if('serviceWorker'in navigator&&location.protocol.startsWith('http'))window.addEventListener('load',()=>navigator.serviceWorker.register('./sw.js').catch(()=>{}));
 })();
+
+// ZEVON direct APK updater: checks public GitHub Releases and verifies SHA-256
+// before handing an APK to Android's package installer.
+const UPDATE_REPO='Vimlesh1996/zevonmobility';
+const UPDATE_CACHE_KEY='zevon_release_check_v1';
+const updateBanner=document.createElement('section');
+updateBanner.id='zevon-update-banner';
+updateBanner.className='update-banner';
+updateBanner.hidden=true;
+updateBanner.innerHTML='<div class="update-copy"><span class="update-kicker">ZEVON UPDATE</span><b id="update-title">A new version is ready</b><small id="update-detail"></small><div id="update-progress" class="update-progress" hidden><span></span></div><small id="update-message" role="status" aria-live="polite"></small></div><button type="button" id="update-action">Update now</button><button type="button" id="update-dismiss" aria-label="Dismiss update">×</button>';
+document.querySelector('.topbar')?.insertAdjacentElement('afterend',updateBanner);
+const updateTitle=updateBanner.querySelector('#update-title');
+const updateDetail=updateBanner.querySelector('#update-detail');
+const updateMessage=updateBanner.querySelector('#update-message');
+const updateAction=updateBanner.querySelector('#update-action');
+const updateDismiss=updateBanner.querySelector('#update-dismiss');
+let availableRelease=null;
+function versionParts(v){return String(v||'0').replace(/^v/i,'').split(/[.+-]/).slice(0,3).map(x=>parseInt(x,10)||0);}
+function isNewer(remote,local){const a=versionParts(remote),b=versionParts(local);for(let i=0;i<3;i++){if(a[i]!==b[i])return a[i]>b[i];}return false;}
+async function nativeUpdater(){return window.Capacitor?.Plugins?.ApkUpdater||null;}
+async function checkForAppUpdate(force=false){
+ if(!window.Capacitor?.isNativePlatform?.())return;
+ const now=Date.now();let cached=null;
+ try{cached=JSON.parse(localStorage.getItem(UPDATE_CACHE_KEY)||'null');}catch(_){}
+ if(!force&&cached&&now-cached.checkedAt<6*60*60*1000){
+  if(cached.release&&cached.currentVersion&&isNewer(cached.release.version,cached.currentVersion))showAvailableUpdate(cached.release,cached.currentVersion);
+  return;
+ }
+ try{
+  const plugin=await nativeUpdater();if(!plugin)return;
+  const installed=await plugin.getAppVersion();
+  const response=await fetch('https://api.github.com/repos/'+UPDATE_REPO+'/releases/latest',{headers:{Accept:'application/vnd.github+json'},cache:'no-store'});
+  if(!response.ok)throw new Error('Update service unavailable');
+  const release=await response.json();
+  const apk=(release.assets||[]).find(a=>/^ZEVON-Mobility-v[0-9]+\.[0-9]+\.[0-9]+\.apk$/i.test(a.name));
+  const digest=String(apk?.digest||'').replace(/^sha256:/i,'');
+  const remoteVersion=String(release.tag_name||'').replace(/^v/i,'');
+  const record=apk&&digest.length===64?{version:remoteVersion,url:apk.browser_download_url,name:apk.name,sha256:digest,notes:String(release.body||'').slice(0,1200),html:release.html_url}:null;
+  localStorage.setItem(UPDATE_CACHE_KEY,JSON.stringify({checkedAt:now,currentVersion:installed.version,release:record}));
+  if(record&&isNewer(record.version,installed.version))showAvailableUpdate(record,installed.version);
+ }catch(error){console.warn('ZEVON update check:',error.message);}
+}
+function showAvailableUpdate(release,current){
+ availableRelease=release;updateBanner.hidden=false;updateTitle.textContent='Version '+release.version+' is available';updateDetail.textContent='You have '+current+'. '+(release.notes||'New features and improvements are ready.').slice(0,220);
+ updateAction.hidden=false;updateDismiss.hidden=false;updateMessage.textContent='Verified official ZEVON GitHub release.';
+}
+updateDismiss.addEventListener('click',()=>{updateBanner.hidden=true;});
+updateAction.addEventListener('click',async()=>{
+ if(!availableRelease)return;
+ const plugin=await nativeUpdater();
+ if(!plugin){updateMessage.textContent='Native updater is not available in this app build.';return;}
+ updateAction.disabled=true;updateAction.textContent='Preparing update…';updateBanner.querySelector('#update-progress').hidden=false;
+ try{
+  const permission=await plugin.canInstallPackages();
+  if(!permission.allowed){updateMessage.textContent='Allow ZEVON to install updates in Android settings. Return here and tap Update now.';await plugin.requestInstallPermission();const again=await plugin.canInstallPackages();if(!again.allowed)throw new Error('Install permission was not granted.');}
+  updateAction.textContent='Downloading…';updateMessage.textContent='Downloading and verifying the official APK. Keep ZEVON open.';
+  await plugin.downloadAndInstall({url:availableRelease.url,fileName:availableRelease.name,sha256:availableRelease.sha256});
+  updateMessage.textContent='APK verified. Android installer opened; confirm installation there.';
+ }catch(error){updateMessage.textContent=error.message||'Update could not be started. Try again later.';}
+ finally{updateAction.disabled=false;updateAction.textContent='Try update again';}
+});
+if(document.readyState==='complete')checkForAppUpdate();else window.addEventListener('load',()=>checkForAppUpdate());
