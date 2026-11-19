@@ -112,7 +112,18 @@ jobs:
           npx cap sync android
           cd android
           chmod +x gradlew
-          ./gradlew assembleRelease
+          # Retry dependency resolution/build in case Maven Central has a transient outage or rate limit.
+          for attempt in 1 2 3; do
+            if ./gradlew assembleRelease --refresh-dependencies; then
+              break
+            fi
+            if [ "$attempt" -eq 3 ]; then
+              echo "::error::Gradle build failed after 3 attempts. Review the first dependency-resolution error above."
+              exit 1
+            fi
+            echo "Gradle build attempt $attempt failed; waiting 20 seconds before retry..."
+            sleep 20
+          done
           cd ..
           cp android/app/build/outputs/apk/release/app-release.apk "ZEVON-Mobility-${RELEASE_TAG}.apk"
           sha256sum "ZEVON-Mobility-${RELEASE_TAG}.apk" > "ZEVON-Mobility-${RELEASE_TAG}.apk.sha256"
