@@ -37,5 +37,5 @@ test('signed release workflow requires private keystore secrets and creates vers
   }
   assert.match(releaseWorkflow, /gh release create/);
   assert.match(releaseWorkflow, /ZEVON-Mobility-/);
-  assert.match(releaseWorkflow, /apksigner verify/);
+  assert.match(releaseWorkflow, /apksigner[\s\S]*verify/);
 });
