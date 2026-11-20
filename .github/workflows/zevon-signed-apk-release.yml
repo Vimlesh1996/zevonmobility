@@ -156,8 +156,8 @@ jobs:
           p = Path("android/app/build.gradle")
           s = p.read_text()
           # Replace generated defaults; do not add duplicate Gradle assignments.
-          s, code_count = re.subn(r'(?m)^\\s*versionCode\\s+\\d+\\s*$', '        versionCode ' + str(code), s, count=1)
-          s, name_count = re.subn(r'(?m)^\\s*versionName\\s+"[^"]*"\\s*$', '        versionName "' + tag + '"', s, count=1)
+          s, code_count = re.subn(r'(?m)^\s*versionCode\s+\d+\s*$', '        versionCode ' + str(code), s, count=1)
+          s, name_count = re.subn(r'(?m)^\s*versionName\s+"[^"]*"\s*$', '        versionName "' + tag + '"', s, count=1)
           if code_count != 1 or name_count != 1:
               raise SystemExit("Could not replace generated Android versionCode/versionName")
           signing = '''
