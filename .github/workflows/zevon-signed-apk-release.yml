@@ -146,7 +146,6 @@ jobs:
         working-directory: .
         env:
           FCM_SERVICE_ACCOUNT_JSON: ${{ secrets.FCM_SERVICE_ACCOUNT_JSON }}
-          FCM_UPDATE_TOPIC: ${{ vars.FCM_UPDATE_TOPIC }}
           RELEASE_TAG: ${{ github.ref_name }}
           GITHUB_REPOSITORY: ${{ github.repository }}
         run: |
