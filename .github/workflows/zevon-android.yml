@@ -12,6 +12,8 @@ on:
     paths:
       - 'app/**'
       - '.github/workflows/zevon-android.yml'
+      - '.github/workflows/zevon-signed-apk-release.yml'
+      - '.github/scripts/**'
 
 permissions:
   contents: read
