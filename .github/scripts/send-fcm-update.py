@@ -11,7 +11,7 @@ from google.oauth2 import service_account
 
 tag = os.environ.get("RELEASE_TAG", "")
 repo = os.environ.get("GITHUB_REPOSITORY", "Vimlesh1996/zevonmobility")
-topic = "zevon-app-updates"
+topic = os.environ.get("FCM_UPDATE_TOPIC", "zevon-app-updates")
 if not re.fullmatch(r"v\d+\.\d+\.\d+", tag):
     raise SystemExit(f"Invalid release tag: {tag!r}")
 if not re.fullmatch(r"[A-Za-z0-9_-]{1,900}", topic):
@@ -21,8 +21,8 @@ try:
 except (KeyError, json.JSONDecodeError) as exc:
     raise SystemExit("FCM_SERVICE_ACCOUNT_JSON must be valid service-account JSON.") from exc
 project = info.get("project_id")
-if not project:
-    raise SystemExit("Service-account JSON has no project_id.")
+if project != "zevon-mobility":
+    raise SystemExit(f"Service-account project_id must be zevon-mobility, got {project!r}.")
 
 api = f"https://api.github.com/repos/{repo}/releases/tags/{tag}"
 request = urllib.request.Request(api, headers={"Accept": "application/vnd.github+json"})
