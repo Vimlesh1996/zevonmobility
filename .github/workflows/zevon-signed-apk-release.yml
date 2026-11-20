@@ -84,17 +84,17 @@ jobs:
           package_file = Path("package.json")
           package_data = json.loads(package_file.read_text())
           package_data["version"] = tag
-          package_file.write_text(json.dumps(package_data, indent=2) + "\\n")
+          package_file.write_text(json.dumps(package_data, indent=2) + "\n")
           html_file = Path("www/index.html")
           html = html_file.read_text()
-          html, count = re.subn(r"Version\\s+\\d+\\.\\d+\\.\\d+", "Version " + tag, html, count=1)
+          html, count = re.subn(r"Version\s+\d+\.\d+\.\d+", "Version " + tag, html, count=1)
           if count != 1:
               raise SystemExit("Could not update the in-app version label")
           html_file.write_text(html)
 
           p = Path("android/app/build.gradle")
           s = p.read_text()
-          s, n = re.subn(r'(defaultConfig\\s*\\{)', r'\\1\\n        versionCode ' + str(code) + '\\n        versionName "' + tag + '"', s, count=1)
+          s, n = re.subn(r'(defaultConfig\s*\{)', r'\1\n        versionCode ' + str(code) + '\n        versionName "' + tag + '"', s, count=1)
           if n != 1:
               raise SystemExit("Could not configure Android versionCode/versionName")
           signing = '''
