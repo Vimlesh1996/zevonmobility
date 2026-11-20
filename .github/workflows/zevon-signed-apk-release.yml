@@ -134,8 +134,14 @@ jobs:
           GH_TOKEN: ${{ github.token }}
           RELEASE_TAG: ${{ inputs.release_tag || github.ref_name }}
         run: |
-          gh release create "${RELEASE_TAG}" \
-            "ZEVON-Mobility-${RELEASE_TAG}.apk" \
-            "ZEVON-Mobility-${RELEASE_TAG}.apk.sha256" \
-            --title "ZEVON Mobility ${RELEASE_TAG}" \
-            --generate-notes
+          APK_FILE="ZEVON-Mobility-${RELEASE_TAG}.apk"
+          CHECKSUM_FILE="${APK_FILE}.sha256"
+
+          if gh release view "${RELEASE_TAG}" >/dev/null 2>&1; then
+            echo "Release ${RELEASE_TAG} already exists; uploading/replacing APK assets."
+            gh release upload "${RELEASE_TAG}" "$APK_FILE" "$CHECKSUM_FILE" --clobber
+          else
+            gh release create "${RELEASE_TAG}" "$APK_FILE" "$CHECKSUM_FILE" \
+              --title "ZEVON Mobility ${RELEASE_TAG}" \
+              --generate-notes
+          fi
