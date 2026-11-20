@@ -37,12 +37,11 @@ jobs:
           KEYSTORE_B64: ${{ secrets.ANDROID_KEYSTORE_BASE64 }}
           KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
           STORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
-          KEY_PASSWORD: ${{ secrets.ANDROID_KEY_PASSWORD }}
+          KEY_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
         run: |
           test -n "$KEYSTORE_B64" || (echo "::error::Missing ANDROID_KEYSTORE_BASE64 secret" && exit 1)
           test -n "$KEY_ALIAS" || (echo "::error::Missing ANDROID_KEY_ALIAS secret" && exit 1)
           test -n "$STORE_PASSWORD" || (echo "::error::Missing ANDROID_KEYSTORE_PASSWORD secret" && exit 1)
-          test -n "$KEY_PASSWORD" || (echo "::error::Missing ANDROID_KEY_PASSWORD secret" && exit 1)
 
       - name: Decode private release keystore
         env:
@@ -55,7 +54,7 @@ jobs:
         env:
           KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
           STORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
-          KEY_PASSWORD: ${{ secrets.ANDROID_KEY_PASSWORD }}
+          KEY_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
         run: |
           cat > VerifyReleaseKeystore.java <<'JAVA'
           import java.io.FileInputStream;
@@ -142,7 +141,7 @@ jobs:
         env:
           KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
           STORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
-          KEY_PASSWORD: ${{ secrets.ANDROID_KEY_PASSWORD }}
+          KEY_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
           RELEASE_TAG: ${{ startsWith(github.ref, 'refs/tags/') && github.ref_name || 'v1.0.3' }}
         run: |
           python3 - <<'PY'
@@ -182,7 +181,7 @@ jobs:
           RELEASE_TAG: ${{ startsWith(github.ref, 'refs/tags/') && github.ref_name || 'v1.0.3' }}
           KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
           STORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
-          KEY_PASSWORD: ${{ secrets.ANDROID_KEY_PASSWORD }}
+          KEY_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
         run: |
           npx cap sync android
           cd android
