@@ -22,6 +22,8 @@ async function check(force=false){
   const p=plugin();if(!p)return;
   if(p.requestNotificationPermission){try{await p.requestNotificationPermission();}catch(e){console.warn('ZEVON notification permission:',e.message);}}
   const installed=await p.getAppVersion();
+  const versionLabel=document.querySelector('#app-version-value');
+  if(versionLabel)versionLabel.textContent='Version '+installed.version;
   const response=await fetch('https://api.github.com/repos/'+REPO+'/releases/latest',{headers:{Accept:'application/vnd.github+json'},cache:'no-store'});
   if(!response.ok)throw new Error('Update service is temporarily unavailable.');
   const data=await response.json();
