@@ -208,11 +208,19 @@ jobs:
           GH_TOKEN: ${{ github.token }}
           RELEASE_TAG: ${{ github.ref_name }}
         run: |
-          gh release create "${RELEASE_TAG}" \
-            "ZEVON-Mobility-${RELEASE_TAG}.apk" \
-            "ZEVON-Mobility-${RELEASE_TAG}.apk.sha256" \
-            --title "ZEVON Mobility ${RELEASE_TAG}" \
-            --generate-notes
+          if gh release view "${RELEASE_TAG}" >/dev/null 2>&1; then
+            echo "Release ${RELEASE_TAG} already exists; uploading/replacing its APK assets."
+            gh release upload "${RELEASE_TAG}" \
+              "ZEVON-Mobility-${RELEASE_TAG}.apk" \
+              "ZEVON-Mobility-${RELEASE_TAG}.apk.sha256" \
+              --clobber
+          else
+            gh release create "${RELEASE_TAG}" \
+              "ZEVON-Mobility-${RELEASE_TAG}.apk" \
+              "ZEVON-Mobility-${RELEASE_TAG}.apk.sha256" \
+              --title "ZEVON Mobility ${RELEASE_TAG}" \
+              --generate-notes
+          fi
 
       - name: Send FCM update notification to subscribed Android devices
         if: startsWith(github.ref, 'refs/tags/')
