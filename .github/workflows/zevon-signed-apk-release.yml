@@ -51,6 +51,60 @@ jobs:
           echo "$KEYSTORE_B64" | base64 --decode > zevon-release.keystore
           chmod 600 zevon-release.keystore
 
+      - name: Diagnose release keystore and private key
+        env:
+          KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
+          STORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
+          KEY_PASSWORD: ${{ secrets.ANDROID_KEY_PASSWORD }}
+        run: |
+          cat > VerifyReleaseKeystore.java <<'JAVA'
+          import java.io.FileInputStream;
+          import java.security.Key;
+          import java.security.KeyStore;
+          import java.security.PrivateKey;
+
+          public class VerifyReleaseKeystore {
+              public static void main(String[] args) throws Exception {
+                  String alias = System.getenv("KEY_ALIAS");
+                  char[] storePassword = System.getenv("STORE_PASSWORD").toCharArray();
+                  char[] keyPassword = System.getenv("KEY_PASSWORD").toCharArray();
+                  String[] types = {"JKS", "PKCS12"};
+                  Exception lastError = null;
+
+                  for (String type : types) {
+                      try {
+                          KeyStore ks = KeyStore.getInstance(type);
+                          try (FileInputStream in = new FileInputStream("zevon-release.keystore")) {
+                              ks.load(in, storePassword);
+                          }
+                          System.out.println("PASS: keystore file opened (" + type + ")");
+                          if (!ks.containsAlias(alias)) {
+                              System.err.println("FAIL: configured alias was not found in the keystore");
+                              System.exit(2);
+                          }
+                          System.out.println("PASS: configured alias exists");
+                          Key key = ks.getKey(alias, keyPassword);
+                          if (!(key instanceof PrivateKey)) {
+                              System.err.println("FAIL: configured alias does not contain a private key");
+                              System.exit(3);
+                          }
+                          System.out.println("PASS: private key unlocked successfully");
+                          return;
+                      } catch (java.security.UnrecoverableKeyException e) {
+                          System.err.println("FAIL: keystore opened, but the private key could not be unlocked with ANDROID_KEY_PASSWORD");
+                          System.exit(4);
+                      } catch (Exception e) {
+                          lastError = e;
+                      }
+                  }
+                  System.err.println("FAIL: keystore could not be opened with ANDROID_KEYSTORE_PASSWORD (or its format is unsupported)");
+                  System.exit(5);
+              }
+          }
+          JAVA
+          javac VerifyReleaseKeystore.java
+          java VerifyReleaseKeystore
+
       - name: Install dependencies and run tests
         run: |
           npm install --no-package-lock
@@ -71,14 +125,14 @@ jobs:
           root = Path("android/build.gradle")
           root_text = root.read_text()
           if "com.google.gms:google-services" not in root_text:
-              root_text, count = re.subn(r'(dependencies\s*\{)', r"\1\n        classpath 'com.google.gms:google-services:4.4.4'", root_text, count=1)
+              root_text, count = re.subn(r'(dependencies\\s*\\{)', r"\\1\\n        classpath 'com.google.gms:google-services:4.4.4'", root_text, count=1)
               if count != 1:
                   raise SystemExit("Could not add Google Services Gradle classpath")
               root.write_text(root_text)
           app = Path("android/app/build.gradle")
           app_text = app.read_text()
           if "com.google.gms.google-services" not in app_text:
-              app.write_text(app_text + "\napply plugin: 'com.google.gms.google-services'\n")
+              app.write_text(app_text + "\\napply plugin: 'com.google.gms.google-services'\\n")
           PY
           else
             echo "::warning::google-services.json is missing; FCM client initialization will not work in this APK."
@@ -102,7 +156,7 @@ jobs:
           code = major * 1000000 + minor * 1000 + patch
           p = Path("android/app/build.gradle")
           s = p.read_text()
-          s, n = re.subn(r'(defaultConfig\s*\{)', r'\1\n        versionCode ' + str(code) + '\n        versionName "' + tag + '"', s, count=1)
+          s, n = re.subn(r'(defaultConfig\\s*\\{)', r'\\1\\n        versionCode ' + str(code) + '\\n        versionName "' + tag + '"', s, count=1)
           if n != 1:
               raise SystemExit("Could not configure Android versionCode/versionName")
           signing = '''
@@ -117,7 +171,7 @@ jobs:
           '''
           if "signingConfigs {" in s:
               raise SystemExit("Unexpected existing signingConfigs block; inspect before release")
-          s, n = re.subn(r'(    buildTypes\s*\{\s*release\s*\{)', signing + r'\n\1\n            signingConfig signingConfigs.release', s, count=1)
+          s, n = re.subn(r'(    buildTypes\\s*\\{\\s*release\\s*\\{)', signing + r'\\n\\1\\n            signingConfig signingConfigs.release', s, count=1)
           if n != 1:
               raise SystemExit("Could not attach release signing config")
           p.write_text(s)
@@ -154,10 +208,10 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
-          gh release create "${RELEASE_TAG}" \
-            "ZEVON-Mobility-${RELEASE_TAG}.apk" \
-            "ZEVON-Mobility-${RELEASE_TAG}.apk.sha256" \
-            --title "ZEVON Mobility ${RELEASE_TAG}" \
+          gh release create "${RELEASE_TAG}" \\
+            "ZEVON-Mobility-${RELEASE_TAG}.apk" \\
+            "ZEVON-Mobility-${RELEASE_TAG}.apk.sha256" \\
+            --title "ZEVON Mobility ${RELEASE_TAG}" \\
             --generate-notes
 
       - name: Send FCM update notification to subscribed Android devices
