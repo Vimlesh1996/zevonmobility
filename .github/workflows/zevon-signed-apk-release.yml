@@ -1,6 +1,11 @@
 name: ZEVON Signed Direct APK Release
 
 on:
+  pull_request:
+    branches:
+      - main
+    paths:
+      - '.github/workflows/zevon-signed-apk-release.yml'
   workflow_dispatch:
     inputs:
       release_tag:
@@ -24,7 +29,18 @@ concurrency:
   cancel-in-progress: false
 
 jobs:
+  validate-workflow:
+    name: Validate workflow YAML
+    if: github.event_name == 'pull_request'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v5
+      - name: Parse workflow YAML
+        run: ruby -e 'require "yaml"; YAML.parse_file(".github/workflows/zevon-signed-apk-release.yml"); puts "Workflow YAML syntax is valid."'
+
   signed-release:
+    if: github.event_name != 'pull_request'
     name: Build and verify signed APK
     runs-on: ubuntu-latest
     defaults:
