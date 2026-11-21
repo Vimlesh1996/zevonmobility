@@ -65,7 +65,7 @@ test('native Capacitor app never registers a service worker',()=>{
 });
 test('updater uses a pinned release manifest and dynamic native app version',()=>{
  assert.match(updater,/releases\/latest\/download\/update\.json/);
- assert.match(updater,/\.app-version b/);
+ assert.match(updater,/app-version-value/);
  assert.match(updater,/signerSha256/);
  assert.match(updater,/semanticCode/);
 });
