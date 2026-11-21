@@ -31,7 +31,7 @@ test('no CDN fonts or insecure updater implementation',()=>{
  assert.ok(nativeUpdater.includes('RELEASE_PREFIX = "https://github.com/Vimlesh1996/zevonmobility/releases/download/"'));
  assert.match(nativeUpdater,/getPackageArchiveInfo/);
  assert.match(nativeUpdater,/signerFingerprint/);
- assert.match(nativeUpdater,/candidateVersionCode <= packageVersionCode\\(installed\\)/);
+ assert.match(nativeUpdater,/candidateVersionCode <= packageVersionCode\(installed\)/);
  assert.match(nativeUpdater,/candidateVersionCode != expectedVersionCode/);
  assert.match(updater,/data\.packageName!=='com\.zevon\.mobility'/);
  assert.match(updater,/versionCode:release\.versionCode/);
