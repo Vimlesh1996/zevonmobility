@@ -138,7 +138,7 @@ jobs:
               count=1
           )
           gradle, name_count = re.subn(
-              r"(?m)^(\s*versionName\s+)[\'"][^\'"]+[\'"]\s*$",
+              r'(?m)^(\s*versionName\s+)"[^"]+"\s*$',
               lambda m: m.group(1) + '"' + version + '"',
               gradle,
               count=1
