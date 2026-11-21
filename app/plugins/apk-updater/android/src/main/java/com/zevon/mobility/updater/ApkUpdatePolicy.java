@@ -1,13 +1,19 @@
 package com.zevon.mobility.updater;
 
 import java.util.Locale;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 /** Pure validation policy for the interactive APK updater. */
 final class ApkUpdatePolicy {
-    private static final String OFFICIAL_URL =
-        "^https://github\\.com/Vimlesh1996/zevonmobility/releases/download/v[0-9]+\\.[0-9]+\\.[0-9]+/ZEVON-Mobility-v[0-9]+\\.[0-9]+\\.[0-9]+\\.apk$";
-    private static final String OFFICIAL_FILE =
-        "^ZEVON-Mobility-v[0-9]+\\.[0-9]+\\.[0-9]+\\.apk$";
+    private static final String VERSION = "(0|[1-9][0-9]*)\\.(0|[1-9][0-9]*)\\.(0|[1-9][0-9]*)";
+    private static final Pattern OFFICIAL_URL = Pattern.compile(
+        "^https://github\\\\.com/Vimlesh1996/zevonmobility/releases/download/v(" + VERSION +
+        ")/ZEVON-Mobility-v(" + VERSION + ")\\\\.apk$"
+    );
+    private static final Pattern OFFICIAL_FILE = Pattern.compile(
+        "^ZEVON-Mobility-v" + VERSION + "\\\\.apk$"
+    );
 
     private ApkUpdatePolicy() {}
 
@@ -16,10 +22,10 @@ final class ApkUpdatePolicy {
     }
 
     static boolean isOfficialReleaseUrl(String url, String fileName) {
-        return url != null && fileName != null &&
-            fileName.matches(OFFICIAL_FILE) &&
-            url.matches(OFFICIAL_URL) &&
-            url.endsWith("/" + fileName);
+        if (url == null || fileName == null || !OFFICIAL_FILE.matcher(fileName).matches()) return false;
+        Matcher match = OFFICIAL_URL.matcher(url);
+        if (!match.matches() || !url.endsWith("/" + fileName)) return false;
+        return match.group(1).equals(match.group(5));
     }
 
     static boolean isExpectedPackage(String actualPackage, String expectedPackage) {
