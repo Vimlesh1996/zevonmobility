@@ -32,6 +32,9 @@ test('no CDN fonts or insecure updater implementation',()=>{
  assert.match(nativeUpdater,/getPackageArchiveInfo/);
  assert.match(nativeUpdater,/signerFingerprint/);
  assert.match(nativeUpdater,/packageVersionCode\(candidate\) <= packageVersionCode\(installed\)/);
+ assert.match(nativeUpdater,/candidateVersionCode != expectedVersionCode/);
+ assert.match(updater,/data\.packageName!=='com\.zevon\.mobility'/);
+ assert.match(updater,/versionCode:release\.versionCode/);
  assert.equal(pkg.dependencies['@zevon/apk-updater'],'file:plugins/apk-updater');
  assert.ok(html.includes('apk-updater.js'));
 });
