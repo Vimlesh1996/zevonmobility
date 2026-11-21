@@ -28,6 +28,10 @@ test('no CDN fonts or insecure updater implementation',()=>{
  assert.match(updater,/sha256/);
  assert.match(nativeUpdater,/MessageDigest/);
  assert.match(nativeUpdater,/REQUEST_INSTALL_PACKAGES|canRequestPackageInstalls/);
+ assert.match(nativeUpdater,/RELEASE_PREFIX = "https:\\/\\/github\\.com\\/Vimlesh1996\\/zevonmobility\\/releases\\/download\\/"/);
+ assert.match(nativeUpdater,/getPackageArchiveInfo/);
+ assert.match(nativeUpdater,/signerFingerprint/);
+ assert.match(nativeUpdater,/packageVersionCode\(candidate\) <= packageVersionCode\(installed\)/);
  assert.equal(pkg.dependencies['@zevon/apk-updater'],'file:plugins/apk-updater');
  assert.ok(html.includes('apk-updater.js'));
 });
@@ -43,6 +47,23 @@ test('My Requests stores only server-confirmed enquiry references locally',()=>{
  assert.match(js,/saveRequest\(data,receipt\)/);
  assert.match(js,/window\.renderZevonRequests=renderRequests/);
  assert.match(js,/Enquiry received/);
+});
+test('native Capacitor app never registers a service worker',()=>{
+ assert.match(js,/!window\.Capacitor\?\.isNativePlatform\?\.\(\).*serviceWorker/);
+ assert.match(updater,/purgeNativeCaches/);
+ assert.match(updater,/getRegistrations/);
+ assert.match(updater,/caches\.delete/);
+ assert.match(updater,/zevon_native_cache_purged_v1_/);
+});
+test('updater uses a pinned release manifest and dynamic native app version',()=>{
+ assert.match(updater,/releases\/latest\/download\/update\.json/);
+ assert.match(updater,/\.app-version b/);
+ assert.match(updater,/signerSha256/);
+ assert.match(updater,/semanticCode/);
+});
+test('web service worker cache namespace is bumped',()=>{
+ const sw=fs.readFileSync(path.join(root,'www','sw.js'),'utf8');
+ assert.match(sw,/zevon-app-shell-v3/);
 });
 test('customer app version is incremented for this update test',()=>{
  assert.equal(pkg.version,'1.0.1');
