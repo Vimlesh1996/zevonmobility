@@ -19,6 +19,7 @@ Android-first customer app. The production website root and live Apps Script dep
 Every relevant pull request and push to `feature/customer-app-rebuild` runs:
 - JavaScript lint for `app.js` and `apk-updater.js`
 - Node contract and regression tests
+- Native JUnit policy tests for updater URL, checksum, package, signer and versionCode checks
 - Capacitor Android project generation
 - Generated manifest hardening (`android:allowBackup=false`)
 - Debug APK build
