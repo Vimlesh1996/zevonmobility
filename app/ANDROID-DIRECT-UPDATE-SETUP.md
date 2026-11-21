@@ -1,66 +1,56 @@
-# ZEVON Direct APK Auto-Update — Setup & Release Guide
+# ZEVON Direct APK Update — Release Guide
 
-## What the app does
+## How updates work
 
-- Checks the latest **published GitHub Release** when the Android app opens (cached for up to six hours).
-- Shows an in-app update card when the release tag is newer than the installed version.
-- Downloads only a GitHub Release APK over HTTPS.
-- Requires the release asset's GitHub SHA-256 digest and verifies the downloaded APK before opening Android's installer.
-- Requests Android's per-app "Install unknown apps" permission only when needed.
-- Android displays the final install confirmation. Silent installation is not supported on ordinary Android devices.
+- The native app reads the published GitHub Release asset `update.json` (not the unauthenticated GitHub Releases API).
+- The manifest contains version, Android versionCode, package name, APK URL, SHA-256 and signing certificate fingerprint.
+- The updater accepts only APK URLs under `Vimlesh1996/zevonmobility/releases/download/`.
+- Before opening Android's installer, the native plugin verifies the APK checksum, package ID, exact expected versionCode and signing certificate against both the manifest and the installed app.
+- The native app removes stale service-worker registrations and Cache Storage once per installed version, then reloads once if stale state existed.
+- Android may ask the user to allow ZEVON to install unknown apps. Android always displays the final installation confirmation; silent installation is not supported.
 
-## One-time signing key setup (owner's computer only)
+## Existing signing key — do not replace
 
-The signing key is the identity of the app. Keep a secure offline backup. Never commit it, upload it to chat, email it, or put it in the repository.
+The published v1.0.7 and v1.0.8 APKs were inspected and use the same release certificate, SHA-256:
 
-Generate it once on a trusted computer (use a strong unique password and keep it safe):
+`A37023520C83251D22A5EF560041AD78A380ED0266DF9B550685155B82990453`
 
-```bash
-keytool -genkeypair -v -keystore zevon-release.keystore -alias zevon-release -keyalg RSA -keysize 4096 -validity 10000
-```
+The installed v1.0.8 app already uses this release signing identity. Do not uninstall it and do not generate a new key for the next update. Replacing the key without a planned Android signing-lineage migration would prevent ordinary in-place updates.
 
-Convert it to a single-line Base64 value locally:
+The original key-generation workflow set `KEY_PASS="$STORE_PASS"`. Therefore the Gradle private-key password is the same as the keystore password.
 
-- macOS/Linux: `base64 -w 0 zevon-release.keystore`
-- macOS without `-w`: `base64 zevon-release.keystore | tr -d '\\n'`
-- Windows PowerShell: `[Convert]::ToBase64String([IO.File]::ReadAllBytes("zevon-release.keystore"))`
+## GitHub Actions secrets
 
-In GitHub, open **Settings → Secrets and variables → Actions → New repository secret** and create:
+Keep only these repository secrets for the signed workflow:
 
-1. `ANDROID_KEYSTORE_BASE64` — the Base64 output (large secret).
-2. `ANDROID_KEY_ALIAS` — `zevon-release` (or the alias chosen).
-3. `ANDROID_KEYSTORE_PASSWORD` — keystore password.
-4. `ANDROID_KEY_PASSWORD` — key password.
+1. `ANDROID_KEYSTORE_BASE64` — Base64 encoding of the existing release keystore.
+2. `ANDROID_KEY_ALIAS` — existing alias.
+3. `ANDROID_KEYSTORE_PASSWORD` — existing keystore password (also used as the key password).
 
-Do not paste any of these secret values into ChatGPT or issues/PR comments. Keep an offline backup of the original keystore and passwords. If the key is lost, future APKs cannot update installations signed with it.
+Never paste secret values into ChatGPT, issues, PR comments or workflow logs. Keep an encrypted offline backup of the original keystore and password.
 
-## Publish a new version
+The old public-repository workflow that generated and uploaded a keystore plus plaintext password artifact has been removed. The signing key has not been rotated.
 
-After the release-candidate changes are reviewed and merged by the owner, update the app's version as needed and push a semantic version tag, e.g.:
+## Release process
 
-```bash
-git tag v1.0.1
-git push origin v1.0.1
-```
+1. Merge and test app-source changes on `feature/customer-app-rebuild`.
+2. Create a semantic tag on the exact tested customer-app commit, e.g. `v1.0.9`.
+3. The signed release workflow checks that the tag points to the checked-out commit and that the commit is an ancestor of `feature/customer-app-rebuild`.
+4. The workflow runs lint/tests, configures version metadata, builds the signed APK, and checks package ID, versionName, versionCode, signer fingerprint, checksum and packaged HTML/service worker.
+5. The workflow creates a Draft GitHub Release with the APK, checksum sidecar and `update.json`. It refuses to overwrite an existing release or assets.
+6. Install the draft APK over v1.0.8 on a physical phone without uninstalling. Verify Android App Info and the More screen both show 1.0.9, and the update banner is absent.
+7. Verify a phone still on v1.0.8 receives one correct update prompt and completes the install.
+8. Publish the draft release only after those checks pass.
 
-The `ZEVON Signed Direct APK Release` workflow then:
-1. checks the four signing secrets;
-2. generates the Android project and registers the local Capacitor updater plugin;
-3. sets Android versionName/versionCode from the tag;
-4. builds and verifies a signed release APK;
-5. creates a GitHub Release with `ZEVON-Mobility-vX.Y.Z.apk` and its SHA-256 sidecar.
+## Dry-run
 
-The app checks that public release and offers the update. Do not reuse a tag/versionCode.
+From GitHub Actions, run **ZEVON Signed Direct APK Release** manually with an existing customer-app tag and `dry_run=true`. It builds and verifies the APK but creates no GitHub Release. Set `dry_run=false` only when you intend to create a draft release.
 
-## First signed release migration
+Do not reuse tags or versionCodes. The version-code formula is `MAJOR × 1,000,000 + MINOR × 1,000 + PATCH`; MINOR and PATCH must each be 0–999.
 
-The existing debug APK is signed with a debug certificate, not this permanent release key. Android will not install a differently signed APK as an in-place update. For the first release-key migration, uninstall the debug build and install the first signed release APK (this removes app-local data). After that, all future releases signed with the same keystore can update in place.
+## Safety boundaries
 
-## Security / production gates
-
-- Keep the keystore private; only GitHub Actions secrets are used by CI.
-- Do not rotate or replace the release key for routine updates.
-- APK is downloaded to private app cache and checksum-verified before installer launch.
-- Android user confirmation is always required.
-- Release workflow only runs on version tags; it does not deploy the website, change DNS, or modify Google Sheets/Apps Script.
-- The current branch is a release candidate. Do not publish a real release until the owner has added signing secrets, tested the first signed APK on a device, and approved release.
+- Do not publish the APK before physical install-over validation.
+- Do not merge the experimental FCM background-download branch into the v1.0.9 release.
+- Do not change production Apps Script, Google Sheets, website Pages settings or DNS as part of APK release work.
+- Android user confirmation remains required.

@@ -6,6 +6,7 @@ on:
     branches:
       - feature/customer-app-rebuild
       - fix/phase0-stale-ui-updater
+      - fix/phase0-release-config-test
     paths:
       - 'app/**'
       - '.github/workflows/zevon-android.yml'
@@ -79,33 +80,51 @@ jobs:
           manifest.write_text(source)
           PY
 
-      - name: Set Android version from package.json
+      - name: Create temporary CI signing key
+        env:
+          STORE_PASSWORD: ci-only-temporary-password
         run: |
-          python3 - <<'PY'
-          import json, re
-          from pathlib import Path
-          version = json.loads(Path("package.json").read_text())["version"]
-          parts = version.split(".")
-          if len(parts) != 3 or not all(x.isdigit() for x in parts):
-              raise SystemExit("app/package.json version must use MAJOR.MINOR.PATCH")
-          major, minor, patch = map(int, parts)
-          code = major * 1000000 + minor * 1000 + patch
-          gradle = Path("android/app/build.gradle")
-          source = gradle.read_text()
-          source, count = re.subn(r'(defaultConfig\s*\{)', r'\1\n        versionCode ' + str(code) + '\n        versionName "' + version + '"', source, count=1)
-          if count != 1:
-              raise SystemExit("Unable to set Android version in generated Gradle file")
-          gradle.write_text(source)
-          PY
+          keytool -genkeypair -noprompt \
+            -keystore zevon-release.keystore \
+            -storepass "$STORE_PASSWORD" \
+            -keypass "$STORE_PASSWORD" \
+            -alias ci-release \
+            -keyalg RSA -keysize 2048 -validity 2 \
+            -dname "CN=ZEVON CI, OU=Build, O=ZEVON, C=IN"
+
+      - name: Configure v1.0.9 release metadata and signing
+        env:
+          RELEASE_TAG: v1.0.9
+          KEY_ALIAS: ci-release
+          STORE_PASSWORD: ci-only-temporary-password
+          KEY_PASSWORD: ci-only-temporary-password
+        run: python3 scripts/configure-android-release.py
 
       - name: Sync web assets
-        run: npx cap sync android
+        run: |
+          npx cap sync android
+          cmp www/index.html android/app/src/main/assets/public/index.html
+          cmp www/sw.js android/app/src/main/assets/public/sw.js
 
-      - name: Build debug APK
+      - name: Build debug and temporary signed release APKs
+        env:
+          KEY_ALIAS: ci-release
+          STORE_PASSWORD: ci-only-temporary-password
+          KEY_PASSWORD: ci-only-temporary-password
         run: |
           cd android
           chmod +x gradlew
-          ./gradlew assembleDebug
+          ./gradlew assembleDebug assembleRelease --no-daemon
+          cd ..
+          AAPT="$ANDROID_HOME/build-tools/35.0.0/aapt"
+          APKSIGNER="$ANDROID_HOME/build-tools/35.0.0/apksigner"
+          APK="android/app/build/outputs/apk/release/app-release.apk"
+          BADGING="$("$AAPT" dump badging "$APK")"
+          echo "$BADGING" | grep -F "package: name='com.zevon.mobility'"
+          echo "$BADGING" | grep -F "versionName='1.0.9'"
+          echo "$BADGING" | grep -F "versionCode='1000009'"
+          "$APKSIGNER" verify --verbose "$APK"
+          rm -f zevon-release.keystore
 
       - name: Upload debug APK
         uses: actions/upload-artifact@v4
