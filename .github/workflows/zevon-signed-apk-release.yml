@@ -25,7 +25,7 @@ concurrency:
 
 jobs:
   signed-release:
-    name: Build and prepare signed APK draft
+    name: Build and verify signed APK
     runs-on: ubuntu-latest
     defaults:
       run:
@@ -37,14 +37,25 @@ jobs:
           ref: ${{ inputs.release_tag || github.sha }}
           fetch-depth: 0
 
-      - name: Verify release commit belongs to customer app branch
+      - name: Verify tag and source provenance
+        env:
+          RELEASE_TAG: ${{ inputs.release_tag || github.ref_name }}
         run: |
+          set -euo pipefail
           git fetch origin feature/customer-app-rebuild:refs/remotes/origin/feature/customer-app-rebuild
-          if ! git merge-base --is-ancestor "$GITHUB_SHA" origin/feature/customer-app-rebuild; then
+          TAG_COMMIT="$(git rev-parse "${RELEASE_TAG}^{commit}")"
+          CHECKED_OUT_COMMIT="$(git rev-parse HEAD)"
+          if [ "$TAG_COMMIT" != "$CHECKED_OUT_COMMIT" ]; then
+            echo "::error::Checkout does not match the requested release tag commit."
+            exit 1
+          fi
+          if ! git merge-base --is-ancestor "$TAG_COMMIT" origin/feature/customer-app-rebuild; then
             echo "::error::The tagged commit is not part of feature/customer-app-rebuild."
             exit 1
           fi
-          echo "Building tagged commit: $GITHUB_SHA"
+          test -f package.json
+          test -f www/index.html
+          echo "Verified tag $RELEASE_TAG at customer-app commit $TAG_COMMIT"
 
       - name: Set up Node
         uses: actions/setup-node@v5
@@ -68,19 +79,19 @@ jobs:
           python3 - <<'PY'
           import os, re
           tag = os.environ["RELEASE_TAG"]
-          match = re.fullmatch(r"v(0|[1-9]\d*)\.(0|[1-9]\d*)\.(0|[1-9]\d*)", tag)
+          match = re.fullmatch(r"v(0|[1-9]\\d*)\\.(0|[1-9]\\d*)\\.(0|[1-9]\\d*)", tag)
           if not match:
               raise SystemExit("Release tag must use vMAJOR.MINOR.PATCH without leading zeroes")
           major, minor, patch = map(int, match.groups())
           if minor > 999 or patch > 999:
               raise SystemExit("MINOR and PATCH must be between 0 and 999")
-          version_code = major * 1000000 + minor * 1000 + patch
-          if version_code < 1 or version_code > 2147483647:
+          code = major * 1000000 + minor * 1000 + patch
+          if code < 1 or code > 2147483647:
               raise SystemExit("Calculated Android versionCode is outside the supported range")
           for key in ("KEYSTORE_B64", "KEY_ALIAS", "STORE_PASSWORD", "KEY_PASSWORD"):
               if not os.environ.get(key):
                   raise SystemExit("Missing required signing configuration: " + key)
-          print(f"Release tag valid; Android versionCode will be {version_code}")
+          print(f"Release tag valid; Android versionCode will be {code}")
           PY
 
       - name: Install dependencies and run tests
@@ -90,6 +101,8 @@ jobs:
           npm test
 
       - name: Generate Android project
+        run: npx cap add android
+
       - name: Decode private release keystore
         env:
           KEYSTORE_B64: ${{ secrets.ANDROID_KEYSTORE_BASE64 }}
@@ -98,21 +111,19 @@ jobs:
           printf '%s' "$KEYSTORE_B64" | base64 --decode > zevon-release.keystore
           test -s zevon-release.keystore
 
-        run: npx cap add android
-
       - name: Configure version and release signing
         env:
           KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
           STORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
           KEY_PASSWORD: ${{ secrets.ANDROID_KEY_PASSWORD || secrets.ANDROID_KEYSTORE_PASSWORD }}
-          RELEASE_TAG: ${{ github.ref_name }}
+          RELEASE_TAG: ${{ inputs.release_tag || github.ref_name }}
         run: |
           python3 - <<'PY'
           import json, os, re
           from pathlib import Path
 
           tag = os.environ["RELEASE_TAG"]
-          match = re.fullmatch(r"v(0|[1-9]\d*)\.(0|[1-9]\d*)\.(0|[1-9]\d*)", tag)
+          match = re.fullmatch(r"v(0|[1-9]\\d*)\\.(0|[1-9]\\d*)\\.(0|[1-9]\\d*)", tag)
           if not match:
               raise SystemExit("Release tag must use vMAJOR.MINOR.PATCH without leading zeroes")
           major, minor, patch = map(int, match.groups())
@@ -126,38 +137,31 @@ jobs:
           package_file = Path("package.json")
           package_data = json.loads(package_file.read_text())
           package_data["version"] = version
-          package_file.write_text(json.dumps(package_data, indent=2) + "\n")
+          package_file.write_text(json.dumps(package_data, indent=2) + "\\n")
 
           html_file = Path("www/index.html")
           html = html_file.read_text()
-          html, html_count = re.subn(
-              r"Version\s+\d+\.\d+\.\d+",
-              "Version " + version,
-              html,
-              count=1
-          )
-          if html_count != 1:
+          html, count = re.subn(r"Version\\s+\\d+\\.\\d+\\.\\d+", "Version " + version, html, count=1)
+          if count != 1:
               raise SystemExit("Could not update exactly one in-app version label")
           html_file.write_text(html)
 
           gradle_file = Path("android/app/build.gradle")
           gradle = gradle_file.read_text()
           gradle, code_count = re.subn(
-              r"(?m)^(\s*versionCode\s+)\d+\s*$",
+              r"(?m)^(\\s*versionCode\\s+)\\d+\\s*$",
               lambda m: m.group(1) + str(version_code),
               gradle,
               count=1
           )
           gradle, name_count = re.subn(
-              r'(?m)^(\s*versionName\s+)"[^"]+"\s*$',
+              r'(?m)^(\\s*versionName\\s+)"[^"]+"\\s*$',
               lambda m: m.group(1) + '"' + version + '"',
               gradle,
               count=1
           )
           if code_count != 1 or name_count != 1:
-              raise SystemExit(
-                  f"Expected exactly one Android versionCode and versionName; found {code_count} and {name_count}"
-              )
+              raise SystemExit(f"Expected one versionCode/versionName; found {code_count}/{name_count}")
 
           signing = """
               signingConfigs {
@@ -172,14 +176,13 @@ jobs:
           if "signingConfigs {" in gradle:
               raise SystemExit("Unexpected existing signingConfigs block; inspect before release")
           gradle, signing_count = re.subn(
-              r"(    buildTypes\s*\{\s*release\s*\{)",
-              signing + r"\n\1\n            signingConfig signingConfigs.release",
+              r"(    buildTypes\\s*\\{\\s*release\\s*\\{)",
+              signing + r"\\n\\1\\n            signingConfig signingConfigs.release",
               gradle,
               count=1
           )
           if signing_count != 1:
               raise SystemExit("Could not attach release signing config")
-
           gradle_file.write_text(gradle)
           print(f"Configured app version {version} (versionCode {version_code})")
           PY
@@ -189,17 +192,22 @@ jobs:
           KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
           STORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
           KEY_PASSWORD: ${{ secrets.ANDROID_KEY_PASSWORD || secrets.ANDROID_KEYSTORE_PASSWORD }}
-          RELEASE_TAG: ${{ github.ref_name }}
+          RELEASE_TAG: ${{ inputs.release_tag || github.ref_name }}
         run: |
           set -euo pipefail
           npx cap sync android
+          cmp www/index.html android/app/src/main/assets/public/index.html
+          cmp www/sw.js android/app/src/main/assets/public/sw.js
+
           cd android
           chmod +x gradlew
           ./gradlew assembleRelease --no-daemon
           cd ..
+
           APK_FILE="ZEVON-Mobility-${RELEASE_TAG}.apk"
+          CHECKSUM_FILE="${APK_FILE}.sha256"
           cp android/app/build/outputs/apk/release/app-release.apk "$APK_FILE"
-          sha256sum "$APK_FILE" > "$APK_FILE.sha256"
+          sha256sum "$APK_FILE" > "$CHECKSUM_FILE"
 
           APKSIGNER="$(find "$ANDROID_HOME/build-tools" -type f -name apksigner | sort -V | tail -n 1)"
           AAPT="$(find "$ANDROID_HOME/build-tools" -type f -name aapt | sort -V | tail -n 1)"
@@ -210,40 +218,50 @@ jobs:
           BADGING="$("$AAPT" dump badging "$APK_FILE")"
           VERSION="${RELEASE_TAG#v}"
           IFS=. read -r MAJOR MINOR PATCH <<< "$VERSION"
-          EXPECTED_CODE=$((MAJOR * 1000000 + MINOR * 1000 + PATCH))
+          EXPECTED_CODE=$((10#$MAJOR * 1000000 + 10#$MINOR * 1000 + 10#$PATCH))
 
           echo "$BADGING" | grep -F "package: name='com.zevon.mobility'"
           echo "$BADGING" | grep -F "versionName='$VERSION'"
           echo "$BADGING" | grep -F "versionCode='$EXPECTED_CODE'"
 
           EXPECTED_CERT="A37023520C83251D22A5EF560041AD78A380ED0266DF9B550685155B82990453"
-          grep -iF "$EXPECTED_CERT" apk-signature-check.txt
+          ACTUAL_CERT="$(awk -F': ' '/Signer #1 certificate SHA-256 digest:/ {gsub(/:/, "", $2); print toupper($2); exit}' apk-signature-check.txt)"
+          test "$ACTUAL_CERT" = "$EXPECTED_CERT"
 
-          cmp www/index.html android/app/src/main/assets/public/index.html
-          cmp www/sw.js android/app/src/main/assets/public/sw.js
-          grep -F "Version $VERSION" www/index.html
-          echo "APK metadata, signing certificate and packaged web assets verified."
+          APK_SHA256="$(awk '{print $1}' "$CHECKSUM_FILE")"
+          APK_URL="https://github.com/Vimlesh1996/zevonmobility/releases/download/${RELEASE_TAG}/${APK_FILE}"
+          export VERSION VERSION_CODE="$EXPECTED_CODE" APK_SHA256 APK_URL EXPECTED_CERT
+          python3 - <<'PY'
+          import json, os
+          from pathlib import Path
+          manifest = {
+              "version": os.environ["VERSION"],
+              "versionCode": int(os.environ["VERSION_CODE"]),
+              "packageName": "com.zevon.mobility",
+              "apkUrl": os.environ["APK_URL"],
+              "sha256": os.environ["APK_SHA256"].lower(),
+              "signerSha256": os.environ["EXPECTED_CERT"],
+              "notes": "Verified ZEVON Mobility update."
+          }
+          Path("update.json").write_text(json.dumps(manifest, indent=2) + "\\n")
+          PY
+          echo "APK metadata, signer, checksum and packaged web assets verified."
 
       - name: Create verified Draft GitHub Release
         if: github.event_name == 'push' || inputs.dry_run == false
         env:
           GH_TOKEN: ${{ github.token }}
-          RELEASE_TAG: ${{ github.ref_name }}
+          RELEASE_TAG: ${{ inputs.release_tag || github.ref_name }}
         run: |
           set -euo pipefail
           APK_FILE="ZEVON-Mobility-${RELEASE_TAG}.apk"
           CHECKSUM_FILE="${APK_FILE}.sha256"
-
           if gh release view "$RELEASE_TAG" >/dev/null 2>&1; then
             echo "::error::Release $RELEASE_TAG already exists. Refusing to replace assets."
             exit 1
           fi
-
-          gh release create "$RELEASE_TAG" \
-            --draft \
-            --title "ZEVON Mobility $RELEASE_TAG" \
-            --generate-notes
-          gh release upload "$RELEASE_TAG" "$APK_FILE" "$CHECKSUM_FILE"
+          gh release create "$RELEASE_TAG" --draft --title "ZEVON Mobility $RELEASE_TAG" --generate-notes
+          gh release upload "$RELEASE_TAG" "$APK_FILE" "$CHECKSUM_FILE" update.json
 
       - name: Report dry-run completion
         if: github.event_name == 'workflow_dispatch' && inputs.dry_run == true
