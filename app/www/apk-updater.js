@@ -40,8 +40,10 @@ async function purgeNativeCaches(){
   if(registrations.length||cacheNames.length){
    console.info('ZEVON removed stale native web caches; reloading once.');
    window.location.reload();
+   return true;
   }
- }catch(error){console.warn('ZEVON native cache cleanup:',error.message);}
+  return false;
+ }catch(error){console.warn('ZEVON native cache cleanup:',error.message);return false;}
 }
 async function installedVersion(){
  const p=plugin();
@@ -62,7 +64,7 @@ async function check(force=false){
  if(!isNative())return;
  try{
   const installed=await installedVersion();
-  const label=document.querySelector('.app-version b');
+  const label=document.querySelector('#app-version-value');
   if(label)label.textContent='Version '+installed.version;
   let cached=null;
   try{cached=JSON.parse(localStorage.getItem(CACHE_KEY)||'null');}catch(_){}
@@ -109,6 +111,6 @@ action.addEventListener('click',async()=>{
  }catch(error){message.textContent=error.message||'Could not start the update. Please try again later.';}
  finally{action.disabled=false;action.textContent='Try again';}
 });
-window.addEventListener('load',async()=>{await purgeNativeCaches();await check();});
+window.addEventListener('load',async()=>{if(!(await purgeNativeCaches()))await check();});
 document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='visible')check(true);});
 })();
