@@ -94,7 +94,7 @@ form.addEventListener('submit',async e=>{
  }catch(error){statusBox.className='form-status show error';statusBox.textContent=error.message||'We could not confirm receipt. Please contact ZEVON before trying again.';}
  finally{submitButton.disabled=false;submitLabel.textContent='Send trip enquiry';}
 });
-if('serviceWorker'in navigator&&location.protocol.startsWith('http'))window.addEventListener('load',()=>navigator.serviceWorker.register('./sw.js').catch(()=>{}));
+if(!window.Capacitor?.isNativePlatform?.()&&'serviceWorker'in navigator&&location.protocol.startsWith('http'))window.addEventListener('load',()=>navigator.serviceWorker.register('./sw.js').catch(()=>{}));
 window.renderZevonRequests=renderRequests;
 })();
 

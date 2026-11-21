@@ -1,8 +1,13 @@
 package com.zevon.mobility.updater;
 
 import android.content.Intent;
+import android.content.pm.PackageInfo;
+import android.content.pm.PackageManager;
+import android.content.pm.Signature;
 import android.net.Uri;
 import android.os.Build;
+import android.os.Handler;
+import android.os.Looper;
 import android.provider.Settings;
 import androidx.core.content.FileProvider;
 import com.getcapacitor.*;
@@ -16,24 +21,36 @@ import java.util.Locale;
 
 @CapacitorPlugin(name = "ApkUpdater")
 public class ApkUpdaterPlugin extends Plugin {
+    private static final String RELEASE_PREFIX = "https://github.com/Vimlesh1996/zevonmobility/releases/download/";
+
     @PluginMethod
     public void getAppVersion(PluginCall call) {
         try {
-            String version = getContext().getPackageManager().getPackageInfo(getContext().getPackageName(), 0).versionName;
-            JSObject result = new JSObject(); result.put("version", version == null ? "0.0.0" : version); call.resolve(result);
-        } catch (Exception e) { call.reject("Unable to read installed app version.", e); }
+            PackageInfo info = getContext().getPackageManager().getPackageInfo(getContext().getPackageName(), 0);
+            JSObject result = new JSObject();
+            result.put("version", info.versionName == null ? "0.0.0" : info.versionName);
+            result.put("versionCode", packageVersionCode(info));
+            call.resolve(result);
+        } catch (Exception e) {
+            call.reject("Unable to read installed app version.", e);
+        }
     }
 
     @PluginMethod
     public void canInstallPackages(PluginCall call) {
         boolean allowed = Build.VERSION.SDK_INT < 26 || getContext().getPackageManager().canRequestPackageInstalls();
-        JSObject result = new JSObject(); result.put("allowed", allowed); call.resolve(result);
+        JSObject result = new JSObject();
+        result.put("allowed", allowed);
+        call.resolve(result);
     }
 
     @PluginMethod
     public void requestInstallPermission(PluginCall call) {
         if (Build.VERSION.SDK_INT < 26 || getContext().getPackageManager().canRequestPackageInstalls()) {
-            JSObject result = new JSObject(); result.put("allowed", true); call.resolve(result); return;
+            JSObject result = new JSObject();
+            result.put("allowed", true);
+            call.resolve(result);
+            return;
         }
         Intent intent = new Intent(Settings.ACTION_MANAGE_UNKNOWN_APP_SOURCES,
             Uri.parse("package:" + getContext().getPackageName()));
@@ -44,7 +61,71 @@ public class ApkUpdaterPlugin extends Plugin {
     private void installPermissionResult(PluginCall call, ActivityResult result) {
         if (call == null) return;
         boolean allowed = Build.VERSION.SDK_INT < 26 || getContext().getPackageManager().canRequestPackageInstalls();
-        JSObject data = new JSObject(); data.put("allowed", allowed); call.resolve(data);
+        JSObject data = new JSObject();
+        data.put("allowed", allowed);
+        call.resolve(data);
+    }
+
+    private static long packageVersionCode(PackageInfo info) {
+        return Build.VERSION.SDK_INT >= 28 ? info.getLongVersionCode() : info.versionCode;
+    }
+
+    private static int signingFlags() {
+        return Build.VERSION.SDK_INT >= 28
+            ? PackageManager.GET_SIGNING_CERTIFICATES
+            : PackageManager.GET_SIGNATURES;
+    }
+
+    private static Signature[] packageSignatures(PackageInfo info) {
+        if (Build.VERSION.SDK_INT >= 28 && info.signingInfo != null) {
+            return info.signingInfo.getApkContentsSigners();
+        }
+        return info.signatures;
+    }
+
+    private static String sha256(Signature signature) throws Exception {
+        byte[] digest = MessageDigest.getInstance("SHA-256").digest(signature.toByteArray());
+        StringBuilder value = new StringBuilder();
+        for (byte b : digest) value.append(String.format(Locale.US, "%02X", b));
+        return value.toString();
+    }
+
+    private static String signerFingerprint(PackageInfo info) throws Exception {
+        Signature[] signatures = packageSignatures(info);
+        if (signatures == null || signatures.length != 1) {
+            throw new SecurityException("APK must have exactly one current signing certificate.");
+        }
+        return sha256(signatures[0]);
+    }
+
+    private void verifyDownloadedApk(File apk, String expectedSigner, long expectedVersionCode) throws Exception {
+        PackageManager manager = getContext().getPackageManager();
+        int flags = signingFlags();
+        PackageInfo candidate = manager.getPackageArchiveInfo(apk.getAbsolutePath(), flags);
+        if (candidate == null || candidate.applicationInfo == null) {
+            throw new SecurityException("Downloaded file is not a valid Android APK.");
+        }
+        String installedPackage = getContext().getPackageName();
+        if (!installedPackage.equals(candidate.packageName)) {
+            throw new SecurityException("APK package name does not match the installed ZEVON app.");
+        }
+
+        PackageInfo installed = manager.getPackageInfo(installedPackage, flags);
+        String candidateSigner = signerFingerprint(candidate);
+        String installedSigner = signerFingerprint(installed);
+        if (!candidateSigner.equalsIgnoreCase(expectedSigner) ||
+            !installedSigner.equalsIgnoreCase(expectedSigner) ||
+            !candidateSigner.equalsIgnoreCase(installedSigner)) {
+            throw new SecurityException("APK signing certificate does not match this ZEVON installation.");
+        }
+
+        long candidateVersionCode = packageVersionCode(candidate);
+        if (candidateVersionCode != expectedVersionCode) {
+            throw new SecurityException("APK versionCode does not match the verified release manifest.");
+        }
+        if (candidateVersionCode <= packageVersionCode(installed)) {
+            throw new SecurityException("Downloaded APK is not newer than the installed version.");
+        }
     }
 
     @PluginMethod
@@ -52,21 +133,50 @@ public class ApkUpdaterPlugin extends Plugin {
         String url = call.getString("url");
         String fileName = call.getString("fileName", "zevon-update.apk");
         String expectedSha256 = call.getString("sha256");
-        if (expectedSha256 == null || !expectedSha256.matches("(?i)[a-f0-9]{64}")) { call.reject("A valid SHA-256 checksum is required."); return; }
-        if (url == null || !url.startsWith("https://github.com/") || !url.contains("/releases/download/")) {
-            call.reject("Only HTTPS ZEVON GitHub Release APK URLs are allowed."); return;
+        String expectedSigner = call.getString("signerSha256");
+        Integer expectedVersionCode = call.getInt("versionCode");
+
+        if (expectedSha256 == null || !expectedSha256.matches("(?i)[a-f0-9]{64}")) {
+            call.reject("A valid APK SHA-256 checksum is required.");
+            return;
+        }
+        if (expectedSigner == null || !expectedSigner.matches("(?i)[a-f0-9]{64}")) {
+            call.reject("A valid signing certificate fingerprint is required.");
+            return;
+        }
+        if (expectedVersionCode == null || expectedVersionCode <= 0) {
+            call.reject("A valid expected Android versionCode is required.");
+            return;
+        }
+        if (url == null || !url.startsWith(RELEASE_PREFIX) ||
+            !url.matches("https://github\\.com/Vimlesh1996/zevonmobility/releases/download/v[0-9]+\\.[0-9]+\\.[0-9]+/ZEVON-Mobility-v[0-9]+\\.[0-9]+\\.[0-9]+\\.apk")) {
+            call.reject("Only APK assets from the official ZEVON GitHub Releases are allowed.");
+            return;
         }
         if (Build.VERSION.SDK_INT >= 26 && !getContext().getPackageManager().canRequestPackageInstalls()) {
-            call.reject("Allow ZEVON to install updates in Android settings first."); return;
+            call.reject("Allow ZEVON to install updates in Android settings first.");
+            return;
         }
-        if (!fileName.matches("[A-Za-z0-9._-]+\\.apk")) { call.reject("Invalid APK file name."); return; }
+        if (!fileName.matches("ZEVON-Mobility-v[0-9]+\\.[0-9]+\\.[0-9]+\\.apk") ||
+            !url.endsWith("/" + fileName)) {
+            call.reject("APK file name does not match the official release URL.");
+            return;
+        }
+
         final String safeName = fileName;
         new Thread(() -> {
-            File out = null; HttpURLConnection connection = null;
+            File out = null;
+            HttpURLConnection connection = null;
             try {
                 URL target = new URL(url);
+                if (!"https".equalsIgnoreCase(target.getProtocol()) ||
+                    !"github.com".equalsIgnoreCase(target.getHost()) ||
+                    target.getPort() != -1) {
+                    throw new SecurityException("APK download host is not trusted.");
+                }
                 connection = (HttpURLConnection) target.openConnection();
-                connection.setConnectTimeout(15000); connection.setReadTimeout(60000);
+                connection.setConnectTimeout(15000);
+                connection.setReadTimeout(60000);
                 connection.setInstanceFollowRedirects(true);
                 connection.setRequestProperty("Accept", "application/octet-stream");
                 int status = connection.getResponseCode();
@@ -76,34 +186,52 @@ public class ApkUpdaterPlugin extends Plugin {
                     !type.toLowerCase(Locale.ROOT).contains("application/vnd.android.package-archive")) {
                     throw new IOException("The release asset did not return an APK download.");
                 }
+
                 out = new File(getContext().getCacheDir(), safeName);
                 try (InputStream in = new BufferedInputStream(connection.getInputStream());
                      FileOutputStream fos = new FileOutputStream(out)) {
-                    byte[] buffer = new byte[8192]; int count;
+                    byte[] buffer = new byte[8192];
+                    int count;
                     while ((count = in.read(buffer)) != -1) fos.write(buffer, 0, count);
                     fos.getFD().sync();
                 }
                 if (out.length() < 1024 * 1024) throw new IOException("Downloaded APK is unexpectedly small.");
+
                 MessageDigest digest = MessageDigest.getInstance("SHA-256");
                 try (InputStream verify = new FileInputStream(out)) {
-                    byte[] chunk = new byte[8192]; int n;
+                    byte[] chunk = new byte[8192];
+                    int n;
                     while ((n = verify.read(chunk)) != -1) digest.update(chunk, 0, n);
                 }
                 StringBuilder actual = new StringBuilder();
                 for (byte b : digest.digest()) actual.append(String.format(Locale.US, "%02x", b));
-                if (!actual.toString().equalsIgnoreCase(expectedSha256)) throw new IOException("APK checksum verification failed. Update cancelled.");
-                Uri uri = FileProvider.getUriForFile(getContext(), getContext().getPackageName() + ".fileprovider", out);
+                if (!actual.toString().equalsIgnoreCase(expectedSha256)) {
+                    throw new SecurityException("APK checksum verification failed. Update cancelled.");
+                }
+
+                verifyDownloadedApk(out, expectedSigner, expectedVersionCode.longValue());
+                Uri uri = FileProvider.getUriForFile(
+                    getContext(),
+                    getContext().getPackageName() + ".fileprovider",
+                    out
+                );
                 Intent install = new Intent(Intent.ACTION_VIEW);
                 install.setDataAndType(uri, "application/vnd.android.package-archive");
                 install.addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION | Intent.FLAG_ACTIVITY_NEW_TASK);
                 getContext().startActivity(install);
-                JSObject response = new JSObject(); response.put("downloaded", true); response.put("bytes", out.length());
-                getActivity().runOnUiThread(() -> call.resolve(response));
+                JSObject response = new JSObject();
+                response.put("downloaded", true);
+                response.put("bytes", out.length());
+                new Handler(Looper.getMainLooper()).post(() -> call.resolve(response));
             } catch (Exception e) {
                 if (out != null) out.delete();
-                String message = e.getMessage() == null ? "Unable to download or open APK installer." : e.getMessage();
-                getActivity().runOnUiThread(() -> call.reject(message));
-            } finally { if (connection != null) connection.disconnect(); }
-        }).start();
+                String error = e.getMessage() == null
+                    ? "Unable to download or verify the APK update."
+                    : e.getMessage();
+                new Handler(Looper.getMainLooper()).post(() -> call.reject(error));
+            } finally {
+                if (connection != null) connection.disconnect();
+            }
+        }, "zevon-apk-update").start();
     }
 }
