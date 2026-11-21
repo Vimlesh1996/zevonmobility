@@ -29,6 +29,14 @@ package_data = json.loads(package_file.read_text())
 package_data["version"] = version
 package_file.write_text(json.dumps(package_data, indent=2) + "\n")
 
+lock_file = root / "package-lock.json"
+if lock_file.exists():
+    lock_data = json.loads(lock_file.read_text())
+    lock_data["version"] = version
+    if isinstance(lock_data.get("packages"), dict) and isinstance(lock_data["packages"].get(""), dict):
+        lock_data["packages"][""]["version"] = version
+    lock_file.write_text(json.dumps(lock_data, indent=2) + "\n")
+
 html_file = root / "www" / "index.html"
 html = html_file.read_text()
 html, html_count = re.subn(

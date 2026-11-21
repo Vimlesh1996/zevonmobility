@@ -14,6 +14,7 @@ function fixture(){
  fs.mkdirSync(path.join(root,'www'),{recursive:true});
  fs.mkdirSync(path.join(root,'android','app'),{recursive:true});
  fs.writeFileSync(path.join(root,'package.json'),JSON.stringify({name:'zevon-test',version:'1.0.1'},null,2));
+ fs.writeFileSync(path.join(root,'package-lock.json'),JSON.stringify({name:'zevon-test',version:'1.0.1',lockfileVersion:3,packages:{'':{name:'zevon-test',version:'1.0.1'}}},null,2));
  fs.writeFileSync(path.join(root,'www','index.html'),'<b id="app-version-value">Version 1.0.1</b>');
  fs.writeFileSync(path.join(root,'android','app','build.gradle'),[
   'android {',
@@ -40,9 +41,12 @@ test('release config applies v1.0.9 metadata and signing without duplicate Gradl
    stdio:'pipe'
   });
   const pkg=JSON.parse(fs.readFileSync(path.join(root,'package.json'),'utf8'));
+  const lock=JSON.parse(fs.readFileSync(path.join(root,'package-lock.json'),'utf8'));
   const html=fs.readFileSync(path.join(root,'www','index.html'),'utf8');
   const gradle=fs.readFileSync(path.join(root,'android','app','build.gradle'),'utf8');
   assert.equal(pkg.version,'1.0.9');
+  assert.equal(lock.version,'1.0.9');
+  assert.equal(lock.packages[''].version,'1.0.9');
   assert.match(html,/Version 1\.0\.9/);
   assert.match(gradle,/versionCode 1000009/);
   assert.match(gradle,/versionName "1\.0\.9"/);
