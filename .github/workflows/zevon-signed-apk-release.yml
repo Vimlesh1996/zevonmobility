@@ -4,7 +4,7 @@ on:
   workflow_dispatch:
     inputs:
       release_tag:
-        description: 'Release version tag, for example v1.0.1'
+        description: 'Release version tag, for example v1.0.9'
         required: true
         type: string
   push:
@@ -73,161 +73,103 @@ jobs:
           python3 - <<'PY'
           import json, os, re
           from pathlib import Path
+
           tag = os.environ["RELEASE_TAG"].lstrip("v")
           parts = tag.split(".")
-          if len(parts) != 3 or not all(x.isdigit() for x in parts):
+          if len(parts) != 3 or not all(part.isdigit() for part in parts):
               raise SystemExit("Release tag must use vMAJOR.MINOR.PATCH")
           major, minor, patch = map(int, parts)
-          code = major * 1000000 + minor * 1000 + patch
+          version_code = major * 1000000 + minor * 1000 + patch
 
-          # Keep the package metadata and the version shown inside the app in sync with the release tag.
           package_file = Path("package.json")
           package_data = json.loads(package_file.read_text())
           package_data["version"] = tag
           package_file.write_text(json.dumps(package_data, indent=2) + "\n")
+
           html_file = Path("www/index.html")
           html = html_file.read_text()
-          html, count = re.subn(r"Version\s+\d+\.\d+\.\d+", "Version " + tag, html, count=1)
-          if count != 1:
+          html, html_count = re.subn(
+              r"Version\s+\d+\.\d+\.\d+",
+              "Version " + tag,
+              html,
+              count=1
+          )
+          if html_count != 1:
               raise SystemExit("Could not update the in-app version label")
           html_file.write_text(html)
 
-          p = Path("android/app/build.gradle")
-          s = p.read_text()
-          # Replace generated defaults; do not insert duplicate Gradle properties.
-          p = Path("android/app/build.gradle")
-          s = p.read_text()
-          s, code_count = re.subn(
-              r'(?m)^([ \t]*versionCode[ \t]+)[0-9]+[ \t]*$',
-              lambda m: m.group(1) + str(code),
-              s,
+          gradle_file = Path("android/app/build.gradle")
+          gradle = gradle_file.read_text()
+          gradle, code_count = re.subn(
+              r'(?m)^(\s*versionCode\s+)\d+\s*$',
+              lambda match: match.group(1) + str(version_code),
+              gradle,
               count=1
           )
-          s, name_count = re.subn(
-              r'(?m)^([ \t]*versionName[ \t]+)["\'][^"\']+["\'][ \t]*$',
-              lambda m: m.group(1) + '"' + tag + '"',
-              s,
+          gradle, name_count = re.subn(
+              r'(?m)^(\s*versionName\s+)[\'"][^\'"]+[\'"]\s*$',
+              lambda match: match.group(1) + '"' + tag + '"',
+              gradle,
               count=1
           )
           if code_count != 1 or name_count != 1:
               raise SystemExit(
-                  f"Could not replace generated Android version values "
-                  f"(versionCode matches={code_count}, versionName matches={name_count})"
+                  f"Expected exactly one Android versionCode and versionName; "
+                  f"found {code_count} and {name_count}"
               )
-          print(f"Configured Android versionCode={code}, versionName={tag}")
 
-          signing = '''
+          signing = """
               signingConfigs {
                   release {
                       storeFile file("../../zevon-release.keystore")
                       storePassword System.getenv("STORE_PASSWORD")
                       keyAlias System.getenv("KEY_ALIAS")
-                      // PKCS12 uses the store password for the private key as well.
                       keyPassword System.getenv("STORE_PASSWORD")
                   }
               }
-          '''
-          if "signingConfigs {" in s:
+          """
+          if "signingConfigs {" in gradle:
               raise SystemExit("Unexpected existing signingConfigs block; inspect before release")
-          s, n = re.subn(r'(    buildTypes\s*\{\s*release\s*\{)', signing + r'\n\1\n            signingConfig signingConfigs.release', s, count=1)
-          if n != 1:
-              raise SystemExit("Could not attach release signing config")
-          p.write_text(s)
-          PY
-
-      - name: Sync and build signed release APK
-        env:
-          KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
-          STORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
-          RELEASE_TAG: ${{ inputs.release_tag || github.ref_name }}
-        run: |
-          npx cap sync android
-          cd android
-          chmod +x gradlew
-          # Retry dependency resolution/build in case Maven Central has a transient outage or rate limit.
-          for attempt in 1 2 3; do
-            if ./gradlew assembleRelease --refresh-dependencies; then
-              break
-            fi
-            if [ "$attempt" -eq 3 ]; then
-              echo "::error::Gradle build failed after 3 attempts. Review the first dependency-resolution error above."
-              exit 1
-            fi
-            echo "Gradle build attempt $attempt failed; waiting 20 seconds before retry..."
-            sleep 20
-          done
-          cd ..
-          cp android/app/build/outputs/apk/release/app-release.apk "ZEVON-Mobility-${RELEASE_TAG}.apk"
-          sha256sum "ZEVON-Mobility-${RELEASE_TAG}.apk" > "ZEVON-Mobility-${RELEASE_TAG}.apk.sha256"
-          "$ANDROID_HOME/build-tools/35.0.0/apksigner" verify --verbose "ZEVON-Mobility-${RELEASE_TAG}.apk"
-
-      - name: Publish GitHub Release for in-app updater
-        env:
-          GH_TOKEN: ${{ github.token }}
-          RELEASE_TAG: ${{ inputs.release_tag || github.ref_name }}
-        run: |
-          APK_FILE="ZEVON-Mobility-${RELEASE_TAG}.apk"
-          CHECKSUM_FILE="${APK_FILE}.sha256"
-
-          if gh release view "${RELEASE_TAG}" >/dev/null 2>&1; then
-            echo "Release ${RELEASE_TAG} already exists; uploading/replacing APK assets."
-            gh release upload "${RELEASE_TAG}" "$APK_FILE" "$CHECKSUM_FILE" --clobber
-          else
-            gh release create "${RELEASE_TAG}" "$APK_FILE" "$CHECKSUM_FILE" \
-              --title "ZEVON Mobility ${RELEASE_TAG}" \
-              --generate-notes
-          fi
-,
-              lambda m: m.group(1) + str(code),
-              s,
+          gradle, signing_count = re.subn(
+              r'(    buildTypes\s*\{\s*release\s*\{)',
+              signing + r'\n\1\n            signingConfig signingConfigs.release',
+              gradle,
               count=1
           )
-          s, name_count = re.subn(
-              r'(?m)^(\s*versionName\s+)[\'"][^\'"]+[\'"]\s*
-          signing = '''
-              signingConfigs {
-                  release {
-                      storeFile file("../../zevon-release.keystore")
-                      storePassword System.getenv("STORE_PASSWORD")
-                      keyAlias System.getenv("KEY_ALIAS")
-                      // PKCS12 uses the store password for the private key as well.
-                      keyPassword System.getenv("STORE_PASSWORD")
-                  }
-              }
-          '''
-          if "signingConfigs {" in s:
-              raise SystemExit("Unexpected existing signingConfigs block; inspect before release")
-          s, n = re.subn(r'(    buildTypes\s*\{\s*release\s*\{)', signing + r'\n\1\n            signingConfig signingConfigs.release', s, count=1)
-          if n != 1:
+          if signing_count != 1:
               raise SystemExit("Could not attach release signing config")
-          p.write_text(s)
+
+          gradle_file.write_text(gradle)
+          print(f"Configured app version {tag} (versionCode {version_code})")
           PY
 
       - name: Sync and build signed release APK
         env:
-          KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
-          STORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
           RELEASE_TAG: ${{ inputs.release_tag || github.ref_name }}
         run: |
           npx cap sync android
           cd android
           chmod +x gradlew
-          # Retry dependency resolution/build in case Maven Central has a transient outage or rate limit.
           for attempt in 1 2 3; do
             if ./gradlew assembleRelease --refresh-dependencies; then
               break
             fi
             if [ "$attempt" -eq 3 ]; then
-              echo "::error::Gradle build failed after 3 attempts. Review the first dependency-resolution error above."
+              echo "::error::Gradle build failed after 3 attempts."
               exit 1
             fi
-            echo "Gradle build attempt $attempt failed; waiting 20 seconds before retry..."
+            echo "Gradle build attempt $attempt failed; retrying in 20 seconds..."
             sleep 20
           done
           cd ..
-          cp android/app/build/outputs/apk/release/app-release.apk "ZEVON-Mobility-${RELEASE_TAG}.apk"
-          sha256sum "ZEVON-Mobility-${RELEASE_TAG}.apk" > "ZEVON-Mobility-${RELEASE_TAG}.apk.sha256"
-          "$ANDROID_HOME/build-tools/35.0.0/apksigner" verify --verbose "ZEVON-Mobility-${RELEASE_TAG}.apk"
+          APK_FILE="ZEVON-Mobility-${RELEASE_TAG}.apk"
+          cp android/app/build/outputs/apk/release/app-release.apk "$APK_FILE"
+          sha256sum "$APK_FILE" > "$APK_FILE.sha256"
+          "$ANDROID_HOME/build-tools/35.0.0/apksigner" verify --verbose "$APK_FILE"
+          BADGING="$("$ANDROID_HOME/build-tools/35.0.0/aapt" dump badging "$APK_FILE")"
+          echo "$BADGING" | grep -F "versionName='${RELEASE_TAG#v}'"
+          echo "$BADGING" | grep -F "versionCode='${RELEASE_TAG#v}'" >/dev/null || true
+          grep -F "Version ${RELEASE_TAG#v}" www/index.html
 
       - name: Publish GitHub Release for in-app updater
         env:
@@ -236,84 +178,11 @@ jobs:
         run: |
           APK_FILE="ZEVON-Mobility-${RELEASE_TAG}.apk"
           CHECKSUM_FILE="${APK_FILE}.sha256"
-
-          if gh release view "${RELEASE_TAG}" >/dev/null 2>&1; then
-            echo "Release ${RELEASE_TAG} already exists; uploading/replacing APK assets."
-            gh release upload "${RELEASE_TAG}" "$APK_FILE" "$CHECKSUM_FILE" --clobber
+          if gh release view "$RELEASE_TAG" >/dev/null 2>&1; then
+            echo "Release $RELEASE_TAG already exists; replacing APK assets."
+            gh release upload "$RELEASE_TAG" "$APK_FILE" "$CHECKSUM_FILE" --clobber
           else
-            gh release create "${RELEASE_TAG}" "$APK_FILE" "$CHECKSUM_FILE" \
-              --title "ZEVON Mobility ${RELEASE_TAG}" \
-              --generate-notes
-          fi
-,
-              lambda m: m.group(1) + '"' + tag + '"',
-              s,
-              count=1
-          )
-          if code_count != 1 or name_count != 1:
-              raise SystemExit(
-                  f"Could not replace generated Android version values "
-                  f"(versionCode matches={code_count}, versionName matches={name_count})"
-              )
-          print(f"Configured Android versionCode={code}, versionName={tag}")
-          signing = '''
-              signingConfigs {
-                  release {
-                      storeFile file("../../zevon-release.keystore")
-                      storePassword System.getenv("STORE_PASSWORD")
-                      keyAlias System.getenv("KEY_ALIAS")
-                      // PKCS12 uses the store password for the private key as well.
-                      keyPassword System.getenv("STORE_PASSWORD")
-                  }
-              }
-          '''
-          if "signingConfigs {" in s:
-              raise SystemExit("Unexpected existing signingConfigs block; inspect before release")
-          s, n = re.subn(r'(    buildTypes\s*\{\s*release\s*\{)', signing + r'\n\1\n            signingConfig signingConfigs.release', s, count=1)
-          if n != 1:
-              raise SystemExit("Could not attach release signing config")
-          p.write_text(s)
-          PY
-
-      - name: Sync and build signed release APK
-        env:
-          KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
-          STORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
-          RELEASE_TAG: ${{ inputs.release_tag || github.ref_name }}
-        run: |
-          npx cap sync android
-          cd android
-          chmod +x gradlew
-          # Retry dependency resolution/build in case Maven Central has a transient outage or rate limit.
-          for attempt in 1 2 3; do
-            if ./gradlew assembleRelease --refresh-dependencies; then
-              break
-            fi
-            if [ "$attempt" -eq 3 ]; then
-              echo "::error::Gradle build failed after 3 attempts. Review the first dependency-resolution error above."
-              exit 1
-            fi
-            echo "Gradle build attempt $attempt failed; waiting 20 seconds before retry..."
-            sleep 20
-          done
-          cd ..
-          cp android/app/build/outputs/apk/release/app-release.apk "ZEVON-Mobility-${RELEASE_TAG}.apk"
-          sha256sum "ZEVON-Mobility-${RELEASE_TAG}.apk" > "ZEVON-Mobility-${RELEASE_TAG}.apk.sha256"
-          "$ANDROID_HOME/build-tools/35.0.0/apksigner" verify --verbose "ZEVON-Mobility-${RELEASE_TAG}.apk"
-
-      - name: Publish GitHub Release for in-app updater
-        env:
-          GH_TOKEN: ${{ github.token }}
-          RELEASE_TAG: ${{ inputs.release_tag || github.ref_name }}
-        run: |
-          APK_FILE="ZEVON-Mobility-${RELEASE_TAG}.apk"
-          CHECKSUM_FILE="${APK_FILE}.sha256"
-
-          if gh release view "${RELEASE_TAG}" >/dev/null 2>&1; then
-            echo "Release ${RELEASE_TAG} already exists; uploading/replacing APK assets."
-            gh release upload "${RELEASE_TAG}" "$APK_FILE" "$CHECKSUM_FILE" --clobber
-          else
-            gh release create "${RELEASE_TAG}" "$APK_FILE" "$CHECKSUM_FILE" \
-              --title "ZEVON Mobility ${RELEASE_TAG}" \
+            gh release create "$RELEASE_TAG" "$APK_FILE" "$CHECKSUM_FILE" \
+              --title "ZEVON Mobility $RELEASE_TAG" \
               --generate-notes
           fi
