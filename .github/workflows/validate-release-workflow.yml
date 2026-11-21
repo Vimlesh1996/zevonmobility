@@ -28,4 +28,4 @@ jobs:
         with:
           go-version: '1.25'
       - name: Validate GitHub Actions workflow syntax and expressions
-        run: go run github.com/rhysd/actionlint/cmd/actionlint@v1.7.7 .github/workflows/zevon-signed-apk-release.yml
+        run: go run github.com/rhysd/actionlint/cmd/actionlint@v1.7.7 .github/workflows/zevon-signed-apk-release.yml .github/workflows/zevon-android.yml
