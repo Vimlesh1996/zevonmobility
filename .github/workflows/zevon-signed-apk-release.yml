@@ -149,80 +149,13 @@ jobs:
           KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
           STORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
           RELEASE_TAG: ${{ inputs.release_tag || github.ref_name }}
-        run: |
-          python3 - <<'PY'
-          import json, os, re
-          from pathlib import Path
-
-          tag = os.environ["RELEASE_TAG"]
-          match = re.fullmatch(r"v(0|[1-9]\d*)\.(0|[1-9]\d*)\.(0|[1-9]\d*)", tag)
-          if not match:
-              raise SystemExit("Release tag must use vMAJOR.MINOR.PATCH without leading zeroes")
-          major, minor, patch = map(int, match.groups())
-          if minor > 999 or patch > 999:
-              raise SystemExit("MINOR and PATCH must be between 0 and 999")
-          version_code = major * 1000000 + minor * 1000 + patch
-          if version_code < 1 or version_code > 2147483647:
-              raise SystemExit("Calculated Android versionCode is outside the supported range")
-          version = f"{major}.{minor}.{patch}"
-
-          package_file = Path("package.json")
-          package_data = json.loads(package_file.read_text())
-          package_data["version"] = version
-          package_file.write_text(json.dumps(package_data, indent=2) + "\n")
-
-          html_file = Path("www/index.html")
-          html = html_file.read_text()
-          html, count = re.subn(r"(?:Version\s+\d+\.\d+\.\d+|Checking version(?:…|\.\.\.))", "Version " + version, html, count=1)
-          if count != 1:
-              raise SystemExit("Could not update exactly one in-app version label")
-          html_file.write_text(html)
-
-          gradle_file = Path("android/app/build.gradle")
-          gradle = gradle_file.read_text()
-          gradle, code_count = re.subn(
-              r"(?m)^(\s*versionCode\s+)\d+\s*$",
-              lambda m: m.group(1) + str(version_code),
-              gradle,
-              count=1
-          )
-          gradle, name_count = re.subn(
-              r'(?m)^(\s*versionName\s+)"[^"]+"\s*$',
-              lambda m: m.group(1) + '"' + version + '"',
-              gradle,
-              count=1
-          )
-          if code_count != 1 or name_count != 1:
-              raise SystemExit(f"Expected one versionCode/versionName; found {code_count}/{name_count}")
-
-          signing = """
-              signingConfigs {
-                  release {
-                      storeFile file("../../zevon-release.keystore")
-                      storePassword System.getenv("STORE_PASSWORD")
-                      keyAlias System.getenv("KEY_ALIAS")
-                      keyPassword System.getenv("STORE_PASSWORD")
-                  }
-              }
-          """
-          if "signingConfigs {" in gradle:
-              raise SystemExit("Unexpected existing signingConfigs block; inspect before release")
-          gradle, signing_count = re.subn(
-              r"(    buildTypes\s*\{\s*release\s*\{)",
-              signing + r"\n\1\n            signingConfig signingConfigs.release",
-              gradle,
-              count=1
-          )
-          if signing_count != 1:
-              raise SystemExit("Could not attach release signing config")
-          gradle_file.write_text(gradle)
-          print(f"Configured app version {version} (versionCode {version_code})")
-          PY
+        run: python3 scripts/configure-android-release.py
 
       - name: Sync and build signed release APK
         env:
           KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
           STORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
+          KEY_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
           RELEASE_TAG: ${{ inputs.release_tag || github.ref_name }}
         run: |
           set -euo pipefail
