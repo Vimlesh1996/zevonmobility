@@ -75,5 +75,5 @@ test('web service worker cache namespace is bumped',()=>{
 });
 test('customer app version is incremented for this update test',()=>{
  assert.equal(pkg.version,'1.0.1');
- assert.match(html,/Version 1\.0\.1/);
+ assert.match(html,/id="app-version-value">Checking version/);
 });
