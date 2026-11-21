@@ -114,7 +114,7 @@ jobs:
         run: |
           cd android
           chmod +x gradlew
-          ./gradlew assembleDebug assembleRelease --no-daemon
+          ./gradlew testDebugUnitTest assembleDebug assembleRelease --no-daemon
           cd ..
           AAPT="$ANDROID_HOME/build-tools/35.0.0/aapt"
           APKSIGNER="$ANDROID_HOME/build-tools/35.0.0/apksigner"
