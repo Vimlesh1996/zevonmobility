@@ -30,6 +30,10 @@ public class ApkUpdatePolicyTest {
         assertFalse(ApkUpdatePolicy.isOfficialReleaseUrl(
             "https://github.com/Vimlesh1996/zevonmobility/releases/download/v1.0.9/other.apk", APK));
         assertFalse(ApkUpdatePolicy.isOfficialReleaseUrl(URL, "../" + APK));
+        assertFalse(ApkUpdatePolicy.isOfficialReleaseUrl(
+            "https://github.com/Vimlesh1996/zevonmobility/releases/download/v01.0.9/" + APK, APK));
+        assertFalse(ApkUpdatePolicy.isOfficialReleaseUrl(
+            "https://github.com/Vimlesh1996/zevonmobility/releases/download/v1.0.8/" + APK, APK));
     }
 
     @Test
