@@ -10,6 +10,7 @@ const js=fs.readFileSync(path.join(root,'www','app.js'),'utf8');
 const pkg=JSON.parse(fs.readFileSync(path.join(root,'package.json'),'utf8'));
 const updater=fs.readFileSync(path.join(root,'www','apk-updater.js'),'utf8');
 const nativeUpdater=fs.readFileSync(path.join(root,'plugins','apk-updater','android','src','main','java','com','zevon','mobility','updater','ApkUpdaterPlugin.java'),'utf8');
+const nativePolicy=fs.readFileSync(path.join(root,'plugins','apk-updater','android','src','main','java','com','zevon','mobility','updater','ApkUpdatePolicy.java'),'utf8');
 
 test('customer app has five primary navigation destinations',()=>{
  for(const name of ['home','book','requests','offers','more'])assert.match(html,new RegExp('data-nav="'+name+'"'));
@@ -28,11 +29,13 @@ test('no CDN fonts or insecure updater implementation',()=>{
  assert.match(updater,/sha256/);
  assert.match(nativeUpdater,/MessageDigest/);
  assert.match(nativeUpdater,/REQUEST_INSTALL_PACKAGES|canRequestPackageInstalls/);
- assert.ok(nativeUpdater.includes('RELEASE_PREFIX = "https://github.com/Vimlesh1996/zevonmobility/releases/download/"'));
+ assert.match(nativeUpdater,/ApkUpdatePolicy\.isOfficialReleaseUrl/);
+ assert.ok(nativePolicy.includes('Vimlesh1996/zevonmobility/releases/download'));
  assert.match(nativeUpdater,/getPackageArchiveInfo/);
  assert.match(nativeUpdater,/signerFingerprint/);
- assert.match(nativeUpdater,/candidateVersionCode <= packageVersionCode\(installed\)/);
- assert.match(nativeUpdater,/candidateVersionCode != expectedVersionCode/);
+ assert.match(nativeUpdater,/ApkUpdatePolicy\.isNewerExpectedVersion/);
+ assert.match(nativePolicy,/isMatchingSigner/);
+ assert.match(nativePolicy,/isExpectedPackage/);
  assert.match(updater,/data\.packageName!=='com\.zevon\.mobility'/);
  assert.match(updater,/versionCode:release\.versionCode/);
  assert.equal(pkg.dependencies['@zevon/apk-updater'],'file:plugins/apk-updater');
