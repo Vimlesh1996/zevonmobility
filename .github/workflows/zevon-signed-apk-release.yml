@@ -173,7 +173,7 @@ jobs:
 
           html_file = Path("www/index.html")
           html = html_file.read_text()
-          html, count = re.subn(r"Version\s+\d+\.\d+\.\d+", "Version " + version, html, count=1)
+          html, count = re.subn(r"(?:Version\s+\d+\.\d+\.\d+|Checking version(?:…|\.\.\.))", "Version " + version, html, count=1)
           if count != 1:
               raise SystemExit("Could not update exactly one in-app version label")
           html_file.write_text(html)
