@@ -5,6 +5,7 @@ on:
   pull_request:
     branches:
       - feature/customer-app-rebuild
+      - fix/phase0-stale-ui-updater
     paths:
       - 'app/**'
       - '.github/workflows/zevon-android.yml'
