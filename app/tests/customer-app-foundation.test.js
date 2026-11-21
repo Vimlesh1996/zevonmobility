@@ -38,6 +38,11 @@ test('no CDN fonts or insecure updater implementation',()=>{
  assert.equal(pkg.dependencies['@zevon/apk-updater'],'file:plugins/apk-updater');
  assert.ok(html.includes('apk-updater.js'));
 });
+test('customer app applies a restrictive content security policy',()=>{
+ assert.match(html,/http-equiv="Content-Security-Policy"/);
+ assert.match(html,/object-src 'none'/);
+ assert.match(html,/script-src 'self' https:\/\/script\.google\.com/);
+});
 test('customer app excludes admin and driver portal links',()=>{
  assert.doesNotMatch(html,/admin\/|driver\//i);
 });
