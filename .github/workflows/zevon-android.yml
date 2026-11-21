@@ -2,6 +2,12 @@ name: ZEVON Android Build
 
 on:
   workflow_dispatch:
+  pull_request:
+    branches:
+      - feature/customer-app-rebuild
+    paths:
+      - 'app/**'
+      - '.github/workflows/zevon-android.yml'
   push:
     branches:
       - zevon-app-v1
