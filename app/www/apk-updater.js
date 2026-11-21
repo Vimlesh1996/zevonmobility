@@ -80,6 +80,7 @@ async function check(force=false){
   if(!/^[a-f0-9]{64}$/i.test(String(data.signerSha256||'')))throw new Error('The update manifest has an invalid signer fingerprint.');
   const version=String(data.version||'');
   const code=Number(data.versionCode)||semanticCode(version);
+  if(data.packageName!=='com.zevon.mobility')throw new Error('The update manifest package name is invalid.');
   if(!version||semanticCode(version)!==code)throw new Error('The update manifest version is invalid.');
   const record={version,versionCode:code,url,name:url.split('/').pop(),sha256:String(data.sha256).toLowerCase(),signerSha256:String(data.signerSha256).toUpperCase(),notes:String(data.notes||'').slice(0,1000)};
   localStorage.setItem(CACHE_KEY,JSON.stringify({checkedAt:Date.now(),release:record}));
@@ -103,7 +104,7 @@ action.addEventListener('click',async()=>{
   }
   action.textContent='Downloading…';
   message.textContent='Downloading APK and checking package, version, signer and checksum…';
-  await p.downloadAndInstall({url:release.url,fileName:release.name,sha256:release.sha256,signerSha256:release.signerSha256});
+  await p.downloadAndInstall({url:release.url,fileName:release.name,sha256:release.sha256,signerSha256:release.signerSha256,versionCode:release.versionCode});
   message.textContent='APK verified. Android installer opened. Confirm the update to finish.';
  }catch(error){message.textContent=error.message||'Could not start the update. Please try again later.';}
  finally{action.disabled=false;action.textContent='Try again';}
