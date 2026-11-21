@@ -28,7 +28,7 @@ test('no CDN fonts or insecure updater implementation',()=>{
  assert.match(updater,/sha256/);
  assert.match(nativeUpdater,/MessageDigest/);
  assert.match(nativeUpdater,/REQUEST_INSTALL_PACKAGES|canRequestPackageInstalls/);
- assert.match(nativeUpdater,/RELEASE_PREFIX = "https:\\/\\/github\\.com\\/Vimlesh1996\\/zevonmobility\\/releases\\/download\\/"/);
+ assert.ok(nativeUpdater.includes('RELEASE_PREFIX = "https://github.com/Vimlesh1996/zevonmobility/releases/download/"'));
  assert.match(nativeUpdater,/getPackageArchiveInfo/);
  assert.match(nativeUpdater,/signerFingerprint/);
  assert.match(nativeUpdater,/packageVersionCode\(candidate\) <= packageVersionCode\(installed\)/);
