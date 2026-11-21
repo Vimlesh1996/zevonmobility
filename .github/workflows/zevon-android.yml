@@ -61,6 +61,24 @@ jobs:
       - name: Generate Android project
         run: npx cap add android
 
+      - name: Disable Android cloud backup for local enquiry data
+        run: |
+          python3 - <<'PY'
+          import re
+          from pathlib import Path
+          manifest = Path("android/app/src/main/AndroidManifest.xml")
+          source = manifest.read_text()
+          source, count = re.subn(
+              r'android:allowBackup="(?:true|false)"',
+              'android:allowBackup="false"',
+              source,
+              count=1
+          )
+          if count != 1:
+              raise SystemExit("Could not set android:allowBackup=false in generated manifest")
+          manifest.write_text(source)
+          PY
+
       - name: Set Android version from package.json
         run: |
           python3 - <<'PY'
