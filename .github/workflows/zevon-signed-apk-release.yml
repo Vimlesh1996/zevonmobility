@@ -165,6 +165,7 @@ jobs:
 
           cd android
           chmod +x gradlew
+          ./gradlew testDebugUnitTest --no-daemon
           ./gradlew assembleRelease --no-daemon
           cd ..
 
