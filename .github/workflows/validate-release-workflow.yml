@@ -1,0 +1,31 @@
+name: Validate ZEVON release workflow
+
+on:
+  push:
+    branches:
+      - fix/phase0-release-pipeline
+    paths:
+      - '.github/workflows/zevon-signed-apk-release.yml'
+      - '.github/workflows/validate-release-workflow.yml'
+  pull_request:
+    branches:
+      - main
+    paths:
+      - '.github/workflows/zevon-signed-apk-release.yml'
+      - '.github/workflows/validate-release-workflow.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  actionlint:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v5
+      - name: Set up Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: '1.25'
+      - name: Validate GitHub Actions workflow syntax and expressions
+        run: go run github.com/rhysd/actionlint/cmd/actionlint@v1.7.7 .github/workflows/zevon-signed-apk-release.yml
