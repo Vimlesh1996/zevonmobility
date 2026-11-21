@@ -1,6 +1,7 @@
 package com.zevon.mobility.updater;
 
 import org.junit.Test;
+import java.util.Arrays;
 import static org.junit.Assert.*;
 
 public class ApkUpdatePolicyTest {
@@ -10,6 +11,12 @@ public class ApkUpdatePolicyTest {
         "ZEVON-Mobility-v1.0.9.apk";
     private static final String URL =
         "https://github.com/Vimlesh1996/zevonmobility/releases/download/v1.0.9/" + APK;
+
+    private static String otherHash() {
+        char[] value = new char[64];
+        Arrays.fill(value, 'B');
+        return new String(value);
+    }
 
     @Test
     public void acceptsOnlyExactOfficialReleaseAssetUrl() {
@@ -44,7 +51,7 @@ public class ApkUpdatePolicyTest {
     @Test
     public void requiresCandidateAndInstalledSignersToMatchManifest() {
         assertTrue(ApkUpdatePolicy.isMatchingSigner(HASH, HASH.toLowerCase(), HASH));
-        assertFalse(ApkUpdatePolicy.isMatchingSigner("B".repeat(64), HASH, HASH));
+        assertFalse(ApkUpdatePolicy.isMatchingSigner(otherHash(), HASH, HASH));
         assertFalse(ApkUpdatePolicy.isMatchingSigner(HASH, "B".repeat(64), HASH));
         assertFalse(ApkUpdatePolicy.isMatchingSigner(HASH, HASH, "bad"));
     }
