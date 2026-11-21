@@ -89,7 +89,6 @@ jobs:
           KEYSTORE_B64: ${{ secrets.ANDROID_KEYSTORE_BASE64 }}
           KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
           STORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
-          KEY_PASSWORD: ${{ secrets.ANDROID_KEY_PASSWORD || secrets.ANDROID_KEYSTORE_PASSWORD }}
           RELEASE_TAG: ${{ inputs.release_tag || github.ref_name }}
         run: |
           python3 - <<'PY'
@@ -104,7 +103,7 @@ jobs:
           code = major * 1000000 + minor * 1000 + patch
           if code < 1 or code > 2147483647:
               raise SystemExit("Calculated Android versionCode is outside the supported range")
-          for key in ("KEYSTORE_B64", "KEY_ALIAS", "STORE_PASSWORD", "KEY_PASSWORD"):
+          for key in ("KEYSTORE_B64", "KEY_ALIAS", "STORE_PASSWORD"):
               if not os.environ.get(key):
                   raise SystemExit("Missing required signing configuration: " + key)
           print(f"Release tag valid; Android versionCode will be {code}")
@@ -149,7 +148,6 @@ jobs:
         env:
           KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
           STORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
-          KEY_PASSWORD: ${{ secrets.ANDROID_KEY_PASSWORD || secrets.ANDROID_KEYSTORE_PASSWORD }}
           RELEASE_TAG: ${{ inputs.release_tag || github.ref_name }}
         run: |
           python3 - <<'PY'
@@ -203,7 +201,7 @@ jobs:
                       storeFile file("../../zevon-release.keystore")
                       storePassword System.getenv("STORE_PASSWORD")
                       keyAlias System.getenv("KEY_ALIAS")
-                      keyPassword System.getenv("KEY_PASSWORD")
+                      keyPassword System.getenv("STORE_PASSWORD")
                   }
               }
           """
@@ -225,7 +223,6 @@ jobs:
         env:
           KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
           STORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
-          KEY_PASSWORD: ${{ secrets.ANDROID_KEY_PASSWORD || secrets.ANDROID_KEYSTORE_PASSWORD }}
           RELEASE_TAG: ${{ inputs.release_tag || github.ref_name }}
         run: |
           set -euo pipefail
