@@ -98,7 +98,7 @@ public class ApkUpdaterPlugin extends Plugin {
         return sha256(signatures[0]);
     }
 
-    private void verifyDownloadedApk(File apk, String expectedSigner) throws Exception {
+    private void verifyDownloadedApk(File apk, String expectedSigner, long expectedVersionCode) throws Exception {
         PackageManager manager = getContext().getPackageManager();
         int flags = signingFlags();
         PackageInfo candidate = manager.getPackageArchiveInfo(apk.getAbsolutePath(), flags);
@@ -119,7 +119,11 @@ public class ApkUpdaterPlugin extends Plugin {
             throw new SecurityException("APK signing certificate does not match this ZEVON installation.");
         }
 
-        if (packageVersionCode(candidate) <= packageVersionCode(installed)) {
+        long candidateVersionCode = packageVersionCode(candidate);
+        if (candidateVersionCode != expectedVersionCode) {
+            throw new SecurityException("APK versionCode does not match the verified release manifest.");
+        }
+        if (candidateVersionCode <= packageVersionCode(installed)) {
             throw new SecurityException("Downloaded APK is not newer than the installed version.");
         }
     }
@@ -130,6 +134,7 @@ public class ApkUpdaterPlugin extends Plugin {
         String fileName = call.getString("fileName", "zevon-update.apk");
         String expectedSha256 = call.getString("sha256");
         String expectedSigner = call.getString("signerSha256");
+        Integer expectedVersionCode = call.getInt("versionCode");
 
         if (expectedSha256 == null || !expectedSha256.matches("(?i)[a-f0-9]{64}")) {
             call.reject("A valid APK SHA-256 checksum is required.");
@@ -137,6 +142,10 @@ public class ApkUpdaterPlugin extends Plugin {
         }
         if (expectedSigner == null || !expectedSigner.matches("(?i)[a-f0-9]{64}")) {
             call.reject("A valid signing certificate fingerprint is required.");
+            return;
+        }
+        if (expectedVersionCode == null || expectedVersionCode <= 0) {
+            call.reject("A valid expected Android versionCode is required.");
             return;
         }
         if (url == null || !url.startsWith(RELEASE_PREFIX) ||
@@ -200,7 +209,7 @@ public class ApkUpdaterPlugin extends Plugin {
                     throw new SecurityException("APK checksum verification failed. Update cancelled.");
                 }
 
-                verifyDownloadedApk(out, expectedSigner);
+                verifyDownloadedApk(out, expectedSigner, expectedVersionCode.longValue());
                 Uri uri = FileProvider.getUriForFile(
                     getContext(),
                     getContext().getPackageName() + ".fileprovider",
