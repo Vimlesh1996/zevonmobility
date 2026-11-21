@@ -72,6 +72,13 @@ jobs:
           print(f"Release tag valid; Android versionCode will be {version_code}")
           PY
 
+      - name: Install dependencies and run tests
+        run: |
+          npm install --no-package-lock
+          npm run lint
+          npm test
+
+      - name: Generate Android project
       - name: Decode private release keystore
         env:
           KEYSTORE_B64: ${{ secrets.ANDROID_KEYSTORE_BASE64 }}
@@ -80,13 +87,6 @@ jobs:
           printf '%s' "$KEYSTORE_B64" | base64 --decode > zevon-release.keystore
           test -s zevon-release.keystore
 
-      - name: Install dependencies and run tests
-        run: |
-          npm install --no-package-lock
-          npm run lint
-          npm test
-
-      - name: Generate Android project
         run: npx cap add android
 
       - name: Configure version and release signing
