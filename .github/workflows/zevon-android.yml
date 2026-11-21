@@ -6,6 +6,7 @@ on:
     branches:
       - feature/customer-app-rebuild
       - fix/phase0-stale-ui-updater
+      - fix/phase0-release-config-test
     paths:
       - 'app/**'
       - '.github/workflows/zevon-android.yml'
@@ -15,6 +16,7 @@ on:
       - zevon-final-v1
       - feature/direct-apk-auto-update
       - feature/customer-app-rebuild
+      - fix/phase0-release-config-test
     paths:
       - 'app/**'
       - '.github/workflows/zevon-android.yml'
