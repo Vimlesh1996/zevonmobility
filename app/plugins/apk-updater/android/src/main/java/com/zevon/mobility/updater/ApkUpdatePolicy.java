@@ -6,11 +6,11 @@ import java.util.regex.Pattern;
 
 /** Pure validation policy for the interactive APK updater. */
 final class ApkUpdatePolicy {
-    private static final String VERSION = "(0|[1-9][0-9]*)\\.(0|[1-9][0-9]*)\\.(0|[1-9][0-9]*)";
-    private static final Pattern OFFICIAL_URL = Pattern.compile(
+        "^https://github\\.com/Vimlesh1996/zevonmobility/releases/download/v(" + VERSION +
+        ")/ZEVON-Mobility-v(" + VERSION + ")\\.apk$"
         "^https://github\\\\.com/Vimlesh1996/zevonmobility/releases/download/v(" + VERSION +
         ")/ZEVON-Mobility-v(" + VERSION + ")\\\\.apk$"
-    );
+        "^ZEVON-Mobility-v" + VERSION + "\\.apk$"
     private static final Pattern OFFICIAL_FILE = Pattern.compile(
         "^ZEVON-Mobility-v" + VERSION + "\\\\.apk$"
     );
