@@ -79,7 +79,7 @@ jobs:
           python3 - <<'PY'
           import os, re
           tag = os.environ["RELEASE_TAG"]
-          match = re.fullmatch(r"v(0|[1-9]\\d*)\\.(0|[1-9]\\d*)\\.(0|[1-9]\\d*)", tag)
+          match = re.fullmatch(r"v(0|[1-9]\d*)\.(0|[1-9]\d*)\.(0|[1-9]\d*)", tag)
           if not match:
               raise SystemExit("Release tag must use vMAJOR.MINOR.PATCH without leading zeroes")
           major, minor, patch = map(int, match.groups())
@@ -123,7 +123,7 @@ jobs:
           from pathlib import Path
 
           tag = os.environ["RELEASE_TAG"]
-          match = re.fullmatch(r"v(0|[1-9]\\d*)\\.(0|[1-9]\\d*)\\.(0|[1-9]\\d*)", tag)
+          match = re.fullmatch(r"v(0|[1-9]\d*)\.(0|[1-9]\d*)\.(0|[1-9]\d*)", tag)
           if not match:
               raise SystemExit("Release tag must use vMAJOR.MINOR.PATCH without leading zeroes")
           major, minor, patch = map(int, match.groups())
@@ -137,11 +137,11 @@ jobs:
           package_file = Path("package.json")
           package_data = json.loads(package_file.read_text())
           package_data["version"] = version
-          package_file.write_text(json.dumps(package_data, indent=2) + "\\n")
+          package_file.write_text(json.dumps(package_data, indent=2) + "\n")
 
           html_file = Path("www/index.html")
           html = html_file.read_text()
-          html, count = re.subn(r"Version\\s+\\d+\\.\\d+\\.\\d+", "Version " + version, html, count=1)
+          html, count = re.subn(r"Version\s+\d+\.\d+\.\d+", "Version " + version, html, count=1)
           if count != 1:
               raise SystemExit("Could not update exactly one in-app version label")
           html_file.write_text(html)
@@ -149,13 +149,13 @@ jobs:
           gradle_file = Path("android/app/build.gradle")
           gradle = gradle_file.read_text()
           gradle, code_count = re.subn(
-              r"(?m)^(\\s*versionCode\\s+)\\d+\\s*$",
+              r"(?m)^(\s*versionCode\s+)\d+\s*$",
               lambda m: m.group(1) + str(version_code),
               gradle,
               count=1
           )
           gradle, name_count = re.subn(
-              r'(?m)^(\\s*versionName\\s+)"[^"]+"\\s*$',
+              r'(?m)^(\s*versionName\s+)"[^"]+"\s*$',
               lambda m: m.group(1) + '"' + version + '"',
               gradle,
               count=1
@@ -176,8 +176,8 @@ jobs:
           if "signingConfigs {" in gradle:
               raise SystemExit("Unexpected existing signingConfigs block; inspect before release")
           gradle, signing_count = re.subn(
-              r"(    buildTypes\\s*\\{\\s*release\\s*\\{)",
-              signing + r"\\n\\1\\n            signingConfig signingConfigs.release",
+              r"(    buildTypes\s*\{\s*release\s*\{)",
+              signing + r"\n\1\n            signingConfig signingConfigs.release",
               gradle,
               count=1
           )
@@ -243,7 +243,7 @@ jobs:
               "signerSha256": os.environ["EXPECTED_CERT"],
               "notes": "Verified ZEVON Mobility update."
           }
-          Path("update.json").write_text(json.dumps(manifest, indent=2) + "\\n")
+          Path("update.json").write_text(json.dumps(manifest, indent=2) + "\n")
           PY
           echo "APK metadata, signer, checksum and packaged web assets verified."
 
