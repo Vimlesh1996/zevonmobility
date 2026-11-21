@@ -1,54 +1,54 @@
 # ZEVON Mobility Customer App
 
-Android-first customer app. The production website root and live Apps Script deployment are not modified by this project branch.
+Android-first customer app. The production website root and live Apps Script deployment remain separate from this project branch.
 
-## Current milestone: M1.1 — Customer app testing build
+## Current status
 
-- Customer app version bumped to 1.0.1 for the next device test.
-- My Requests now stores the last 20 server-confirmed enquiry references locally on the same device. It does not claim a booking is confirmed or show a live backend status.
-- Home now explains the three-step enquiry process; More shows the app version.
-
-## Current milestone: M1 — Foundation + Home
-
-- Capacitor 7 shell; application ID: `com.zevon.mobility`.
-- Responsive customer home with ZEVON navy/red/light visual system.
+- Capacitor 7 customer app; Android application ID: `com.zevon.mobility`.
 - Six enquiry trip types and five-tab navigation (Home, Book, My Requests, Offers, More).
-- Existing requestId + Apps Script acknowledgement submission contract retained.
-- No admin or driver portals in the customer app.
-- Direct APK update checker restored for Android builds. It checks the latest official GitHub Release, validates the SHA-256 digest, and opens Android's package installer after the user grants permission.
-- Android still requires the user to confirm installation; silent background installation is not available to an ordinary app.
-- Signed releases must use the same private keystore as the installed app. The release workflow requires `ANDROID_KEYSTORE_BASE64`, `ANDROID_KEY_ALIAS`, `ANDROID_KEYSTORE_PASSWORD`, and `ANDROID_KEY_PASSWORD` GitHub Actions secrets. Never commit these values or the keystore.
-- No externally hosted fonts; system font stack is used until licensed local font assets are bundled.
+- Existing requestId + Apps Script acknowledgement submission contract retained. An enquiry is not a confirmed booking.
+- My Requests stores up to the last 20 server-confirmed enquiry references locally on this device; it is not a live backend status feed.
+- Native Capacitor builds do not register the browser service worker. The updater removes stale native service-worker/cache state once per installed version.
+- The More screen reads the installed Android version from the native plugin; the HTML version is only a readable web fallback.
+- The updater reads the latest published `update.json` release asset, pins downloads to this repository, and verifies APK checksum, package ID, versionCode and signing certificate before opening Android's installer.
+- Android always requires the user to confirm installation. Silent install is not supported for ordinary apps.
+- No FCM background APK download is included in the Phase 0 release.
 
-## GitHub Actions build
+## GitHub Actions validation
 
-Every push to `feature/customer-app-rebuild` touching `app/**` or the Android workflow runs lint, contract tests, Capacitor Android project generation, and a debug APK build. The APK is uploaded as a workflow artifact for 14 days.
+Every relevant pull request and push to `feature/customer-app-rebuild` runs:
+- JavaScript lint for `app.js` and `apk-updater.js`
+- Node contract and regression tests
+- Capacitor Android project generation
+- Generated manifest hardening (`android:allowBackup=false`)
+- Debug APK build
+- Temporary-key signed release build with v1.0.9 metadata assertions
 
-Open the repository Actions tab, select **ZEVON Android Build**, open the successful run, then download `zevon-mobility-debug-apk`.
+The CI-only key is generated on the runner and is not the production signing key.
 
-## Local development (optional only)
+## Signed release workflow
 
-The project can be installed and run with Node 22, npm, Capacitor CLI and Android SDK 35. The owner has requested GitHub Actions as the development/build environment; no local setup is required for the intended workflow.
+The signed workflow lives on `main` because that branch hosts the production website and Actions workflows; the app source remains on `feature/customer-app-rebuild`. Do not merge the app directory into `main`, because GitHub Pages deploys the website from the root of that branch.
 
-## Backend
+A release tag must point to a commit that is already on `feature/customer-app-rebuild`. The workflow checks tag/commit parity and branch ancestry before building.
 
-The existing Apps Script requestId/ack integration is retained in the current customer booking flow. Do not change the live deployment, spreadsheet permissions, endpoint or data model without explicit owner approval. Fare quotes, map search, vehicle inventory, and booking status are subsequent milestones and must use server-provided data only.
+Required GitHub Actions repository secrets:
+- `ANDROID_KEYSTORE_BASE64`
+- `ANDROID_KEY_ALIAS`
+- `ANDROID_KEYSTORE_PASSWORD`
 
-## Milestones
+The original signing-key generator set the private-key password equal to the keystore password. The workflow therefore uses `ANDROID_KEYSTORE_PASSWORD` for both Gradle password fields; a separate `ANDROID_KEY_PASSWORD` secret is not required.
 
-- M0 Design: approved.
-- M1 Foundation + Home: in implementation; CI and device QA pending.
-- M2 Location search, map, route and server quote results.
-- M3 Passenger details, verified enquiry acknowledgement and My Requests.
-- M4 Corporate, Partner/Fleet, Contact, Offers and content.
-- M5 Accessibility, performance, Android QA and store preparation.
+A tag push builds and creates a **Draft GitHub Release** only after APK verification. The workflow also supports manual dry-run for an existing tag; with dry-run enabled it builds and verifies but creates no release. Review the draft, test install-over on a physical phone, then publish it manually. Existing releases/assets are never overwritten.
 
-## Safety
+## Signing-key continuity
 
-- Work on `feature/customer-app-rebuild`.
-- Do not merge to `main`, deploy GitHub Pages, publish an APK release, change DNS, or modify live Apps Script without explicit approval.
-- Never commit signing keys, passwords, tokens, customer lists, or spreadsheet IDs.
+The v1.0.7 and v1.0.8 APKs were inspected and share the release certificate fingerprint:
 
-## Direct APK updates
+`A37023520C83251D22A5EF560041AD78A380ED0266DF9B550685155B82990453`
 
-The customer app checks the latest GitHub Release on launch and when returning to the foreground (with a six-hour cache). Release assets must be named `ZEVON-Mobility-vMAJOR.MINOR.PATCH.apk` and expose a GitHub SHA-256 asset digest. Publishing a tag such as `v1.0.1` runs `.github/workflows/zevon-signed-apk-release.yml`, builds a signed APK, and publishes it as a GitHub Release asset. Before publishing the first update, confirm the four signing secrets above are present and contain the exact same release keystore and alias used to sign the app already installed on the phone. A different signing key cannot update an existing installation.
+Keep the existing release keystore; do not generate a replacement for routine releases. Never commit or share the keystore, password, service-account JSON, access tokens or customer data. Keep a secure offline encrypted backup. Key rotation requires a deliberate migration plan because installed apps depend on signing continuity.
+
+## Backend boundary
+
+The existing production Apps Script requestId/ack integration is retained. Do not change the live deployment, spreadsheet permissions, endpoint or data model without a separately scoped owner-approved change. Fare quotes, live vehicle inventory, offers and server-side request status are later milestones and must use server-provided data only.
