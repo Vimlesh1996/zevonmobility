@@ -52,7 +52,7 @@ public class ApkUpdatePolicyTest {
     public void requiresCandidateAndInstalledSignersToMatchManifest() {
         assertTrue(ApkUpdatePolicy.isMatchingSigner(HASH, HASH.toLowerCase(), HASH));
         assertFalse(ApkUpdatePolicy.isMatchingSigner(otherHash(), HASH, HASH));
-        assertFalse(ApkUpdatePolicy.isMatchingSigner(HASH, "B".repeat(64), HASH));
+        assertFalse(ApkUpdatePolicy.isMatchingSigner(HASH, otherHash(), HASH));
         assertFalse(ApkUpdatePolicy.isMatchingSigner(HASH, HASH, "bad"));
     }
 
