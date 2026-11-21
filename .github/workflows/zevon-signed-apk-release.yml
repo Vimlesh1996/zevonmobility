@@ -281,7 +281,8 @@ jobs:
 
       - name: Report dry-run completion
         if: github.event_name == 'workflow_dispatch' && inputs.dry_run == true
-        run: echo "Dry run completed: APK was built and verified; no GitHub Release was created."
+        run: |
+          echo "Dry run completed: APK was built and verified; no GitHub Release was created."
 
       - name: Remove temporary signing material
         if: always()
