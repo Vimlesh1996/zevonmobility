@@ -167,9 +167,12 @@ jobs:
           sha256sum "$APK_FILE" > "$APK_FILE.sha256"
           "$ANDROID_HOME/build-tools/35.0.0/apksigner" verify --verbose "$APK_FILE"
           BADGING="$("$ANDROID_HOME/build-tools/35.0.0/aapt" dump badging "$APK_FILE")"
-          echo "$BADGING" | grep -F "versionName='${RELEASE_TAG#v}'"
-          echo "$BADGING" | grep -F "versionCode='${RELEASE_TAG#v}'" >/dev/null || true
-          grep -F "Version ${RELEASE_TAG#v}" www/index.html
+          VERSION="${RELEASE_TAG#v}"
+          IFS=. read -r MAJOR MINOR PATCH <<< "$VERSION"
+          EXPECTED_CODE=$((MAJOR * 1000000 + MINOR * 1000 + PATCH))
+          echo "$BADGING" | grep -F "versionName='$VERSION'"
+          echo "$BADGING" | grep -F "versionCode='$EXPECTED_CODE'"
+          grep -F "Version $VERSION" www/index.html
 
       - name: Publish GitHub Release for in-app updater
         env:
