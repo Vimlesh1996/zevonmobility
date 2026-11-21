@@ -111,7 +111,7 @@ jobs:
 
       - name: Install dependencies and run tests
         run: |
-          npm install --no-package-lock
+          npm ci
           npm run lint
           npm test
 
