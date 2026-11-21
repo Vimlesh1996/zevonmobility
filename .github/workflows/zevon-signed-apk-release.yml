@@ -1,12 +1,6 @@
 name: ZEVON Signed Direct APK Release
 
 on:
-  workflow_dispatch:
-    inputs:
-      release_tag:
-        description: 'Release version tag, for example v1.0.9'
-        required: true
-        type: string
   push:
     tags:
       - 'v*.*.*'
@@ -14,18 +8,32 @@ on:
 permissions:
   contents: write
 
+concurrency:
+  group: zevon-release-${{ github.ref }}
+  cancel-in-progress: false
+
 jobs:
   signed-release:
-    name: Build and publish signed APK
+    name: Build and prepare signed APK draft
     runs-on: ubuntu-latest
     defaults:
       run:
         working-directory: app
     steps:
-      - name: Checkout customer app source
+      - name: Checkout exact release-tag commit
         uses: actions/checkout@v5
         with:
-          ref: feature/customer-app-rebuild
+          ref: ${{ github.sha }}
+          fetch-depth: 0
+
+      - name: Verify release commit belongs to customer app branch
+        run: |
+          git fetch origin feature/customer-app-rebuild:refs/remotes/origin/feature/customer-app-rebuild
+          if ! git merge-base --is-ancestor "$GITHUB_SHA" origin/feature/customer-app-rebuild; then
+            echo "::error::The tagged commit is not part of feature/customer-app-rebuild."
+            exit 1
+          fi
+          echo "Building tagged commit: $GITHUB_SHA"
 
       - name: Set up Node
         uses: actions/setup-node@v5
@@ -38,22 +46,39 @@ jobs:
           distribution: temurin
           java-version: '21'
 
-      - name: Validate signing secrets
+      - name: Validate release tag and signing secrets
         env:
           KEYSTORE_B64: ${{ secrets.ANDROID_KEYSTORE_BASE64 }}
           KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
           STORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
+          KEY_PASSWORD: ${{ secrets.ANDROID_KEY_PASSWORD || secrets.ANDROID_KEYSTORE_PASSWORD }}
+          RELEASE_TAG: ${{ github.ref_name }}
         run: |
-          test -n "$KEYSTORE_B64" || (echo "::error::Missing ANDROID_KEYSTORE_BASE64 secret" && exit 1)
-          test -n "$KEY_ALIAS" || (echo "::error::Missing ANDROID_KEY_ALIAS secret" && exit 1)
-          test -n "$STORE_PASSWORD" || (echo "::error::Missing ANDROID_KEYSTORE_PASSWORD secret" && exit 1)
+          python3 - <<'PY'
+          import os, re
+          tag = os.environ["RELEASE_TAG"]
+          match = re.fullmatch(r"v(0|[1-9]\\d*)\\.(0|[1-9]\\d*)\\.(0|[1-9]\\d*)", tag)
+          if not match:
+              raise SystemExit("Release tag must use vMAJOR.MINOR.PATCH without leading zeroes")
+          major, minor, patch = map(int, match.groups())
+          if minor > 999 or patch > 999:
+              raise SystemExit("MINOR and PATCH must be between 0 and 999")
+          version_code = major * 1000000 + minor * 1000 + patch
+          if version_code < 1 or version_code > 2147483647:
+              raise SystemExit("Calculated Android versionCode is outside the supported range")
+          for key in ("KEYSTORE_B64", "KEY_ALIAS", "STORE_PASSWORD", "KEY_PASSWORD"):
+              if not os.environ.get(key):
+                  raise SystemExit("Missing required signing configuration: " + key)
+          print(f"Release tag valid; Android versionCode will be {version_code}")
+          PY
 
       - name: Decode private release keystore
         env:
           KEYSTORE_B64: ${{ secrets.ANDROID_KEYSTORE_BASE64 }}
         run: |
-          echo "$KEYSTORE_B64" | base64 --decode > zevon-release.keystore
-          chmod 600 zevon-release.keystore
+          umask 077
+          printf '%s' "$KEYSTORE_B64" | base64 --decode > zevon-release.keystore
+          test -s zevon-release.keystore
 
       - name: Install dependencies and run tests
         run: |
@@ -68,54 +93,59 @@ jobs:
         env:
           KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
           STORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
-          RELEASE_TAG: ${{ inputs.release_tag || github.ref_name }}
+          KEY_PASSWORD: ${{ secrets.ANDROID_KEY_PASSWORD || secrets.ANDROID_KEYSTORE_PASSWORD }}
+          RELEASE_TAG: ${{ github.ref_name }}
         run: |
           python3 - <<'PY'
           import json, os, re
           from pathlib import Path
 
-          tag = os.environ["RELEASE_TAG"].lstrip("v")
-          parts = tag.split(".")
-          if len(parts) != 3 or not all(part.isdigit() for part in parts):
-              raise SystemExit("Release tag must use vMAJOR.MINOR.PATCH")
-          major, minor, patch = map(int, parts)
+          tag = os.environ["RELEASE_TAG"]
+          match = re.fullmatch(r"v(0|[1-9]\\d*)\\.(0|[1-9]\\d*)\\.(0|[1-9]\\d*)", tag)
+          if not match:
+              raise SystemExit("Release tag must use vMAJOR.MINOR.PATCH without leading zeroes")
+          major, minor, patch = map(int, match.groups())
+          if minor > 999 or patch > 999:
+              raise SystemExit("MINOR and PATCH must be between 0 and 999")
           version_code = major * 1000000 + minor * 1000 + patch
+          if version_code < 1 or version_code > 2147483647:
+              raise SystemExit("Calculated Android versionCode is outside the supported range")
+          version = f"{major}.{minor}.{patch}"
 
           package_file = Path("package.json")
           package_data = json.loads(package_file.read_text())
-          package_data["version"] = tag
-          package_file.write_text(json.dumps(package_data, indent=2) + "\n")
+          package_data["version"] = version
+          package_file.write_text(json.dumps(package_data, indent=2) + "\\n")
 
           html_file = Path("www/index.html")
           html = html_file.read_text()
           html, html_count = re.subn(
-              r"Version\s+\d+\.\d+\.\d+",
-              "Version " + tag,
+              r"Version\\s+\\d+\\.\\d+\\.\\d+",
+              "Version " + version,
               html,
               count=1
           )
           if html_count != 1:
-              raise SystemExit("Could not update the in-app version label")
+              raise SystemExit("Could not update exactly one in-app version label")
           html_file.write_text(html)
 
           gradle_file = Path("android/app/build.gradle")
           gradle = gradle_file.read_text()
           gradle, code_count = re.subn(
-              r'(?m)^(\s*versionCode\s+)\d+\s*$',
-              lambda match: match.group(1) + str(version_code),
+              r"(?m)^(\\s*versionCode\\s+)\\d+\\s*$",
+              lambda m: m.group(1) + str(version_code),
               gradle,
               count=1
           )
           gradle, name_count = re.subn(
-              r'(?m)^(\s*versionName\s+)[\'"][^\'"]+[\'"]\s*$',
-              lambda match: match.group(1) + '"' + tag + '"',
+              r"(?m)^(\\s*versionName\\s+)[\\'"][^\\'"]+[\\'"]\\s*$",
+              lambda m: m.group(1) + '"' + version + '"',
               gradle,
               count=1
           )
           if code_count != 1 or name_count != 1:
               raise SystemExit(
-                  f"Expected exactly one Android versionCode and versionName; "
-                  f"found {code_count} and {name_count}"
+                  f"Expected exactly one Android versionCode and versionName; found {code_count} and {name_count}"
               )
 
           signing = """
@@ -124,15 +154,15 @@ jobs:
                       storeFile file("../../zevon-release.keystore")
                       storePassword System.getenv("STORE_PASSWORD")
                       keyAlias System.getenv("KEY_ALIAS")
-                      keyPassword System.getenv("STORE_PASSWORD")
+                      keyPassword System.getenv("KEY_PASSWORD")
                   }
               }
           """
           if "signingConfigs {" in gradle:
               raise SystemExit("Unexpected existing signingConfigs block; inspect before release")
           gradle, signing_count = re.subn(
-              r'(    buildTypes\s*\{\s*release\s*\{)',
-              signing + r'\n\1\n            signingConfig signingConfigs.release',
+              r"(    buildTypes\\s*\\{\\s*release\\s*\\{)",
+              signing + r"\\n\\1\\n            signingConfig signingConfigs.release",
               gradle,
               count=1
           )
@@ -140,52 +170,69 @@ jobs:
               raise SystemExit("Could not attach release signing config")
 
           gradle_file.write_text(gradle)
-          print(f"Configured app version {tag} (versionCode {version_code})")
+          print(f"Configured app version {version} (versionCode {version_code})")
           PY
 
       - name: Sync and build signed release APK
         env:
-          RELEASE_TAG: ${{ inputs.release_tag || github.ref_name }}
+          KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
+          STORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
+          KEY_PASSWORD: ${{ secrets.ANDROID_KEY_PASSWORD || secrets.ANDROID_KEYSTORE_PASSWORD }}
+          RELEASE_TAG: ${{ github.ref_name }}
         run: |
+          set -euo pipefail
           npx cap sync android
           cd android
           chmod +x gradlew
-          for attempt in 1 2 3; do
-            if ./gradlew assembleRelease --refresh-dependencies; then
-              break
-            fi
-            if [ "$attempt" -eq 3 ]; then
-              echo "::error::Gradle build failed after 3 attempts."
-              exit 1
-            fi
-            echo "Gradle build attempt $attempt failed; retrying in 20 seconds..."
-            sleep 20
-          done
+          ./gradlew assembleRelease --no-daemon
           cd ..
           APK_FILE="ZEVON-Mobility-${RELEASE_TAG}.apk"
           cp android/app/build/outputs/apk/release/app-release.apk "$APK_FILE"
           sha256sum "$APK_FILE" > "$APK_FILE.sha256"
-          "$ANDROID_HOME/build-tools/35.0.0/apksigner" verify --verbose "$APK_FILE"
-          BADGING="$("$ANDROID_HOME/build-tools/35.0.0/aapt" dump badging "$APK_FILE")"
+
+          APKSIGNER="$(find "$ANDROID_HOME/build-tools" -type f -name apksigner | sort -V | tail -n 1)"
+          AAPT="$(find "$ANDROID_HOME/build-tools" -type f -name aapt | sort -V | tail -n 1)"
+          test -x "$APKSIGNER"
+          test -x "$AAPT"
+
+          "$APKSIGNER" verify --verbose --print-certs "$APK_FILE" > apk-signature-check.txt
+          BADGING="$("$AAPT" dump badging "$APK_FILE")"
           VERSION="${RELEASE_TAG#v}"
           IFS=. read -r MAJOR MINOR PATCH <<< "$VERSION"
           EXPECTED_CODE=$((MAJOR * 1000000 + MINOR * 1000 + PATCH))
+
+          echo "$BADGING" | grep -F "package: name='com.zevon.mobility'"
           echo "$BADGING" | grep -F "versionName='$VERSION'"
           echo "$BADGING" | grep -F "versionCode='$EXPECTED_CODE'"
-          grep -F "Version $VERSION" www/index.html
 
-      - name: Publish GitHub Release for in-app updater
+          EXPECTED_CERT="A37023520C83251D22A5EF560041AD78A380ED0266DF9B550685155B82990453"
+          grep -iF "$EXPECTED_CERT" apk-signature-check.txt
+
+          cmp www/index.html android/app/src/main/assets/public/index.html
+          cmp www/sw.js android/app/src/main/assets/public/sw.js
+          grep -F "Version $VERSION" www/index.html
+          echo "APK metadata, signing certificate and packaged web assets verified."
+
+      - name: Create verified Draft GitHub Release
         env:
           GH_TOKEN: ${{ github.token }}
-          RELEASE_TAG: ${{ inputs.release_tag || github.ref_name }}
+          RELEASE_TAG: ${{ github.ref_name }}
         run: |
+          set -euo pipefail
           APK_FILE="ZEVON-Mobility-${RELEASE_TAG}.apk"
           CHECKSUM_FILE="${APK_FILE}.sha256"
+
           if gh release view "$RELEASE_TAG" >/dev/null 2>&1; then
-            echo "Release $RELEASE_TAG already exists; replacing APK assets."
-            gh release upload "$RELEASE_TAG" "$APK_FILE" "$CHECKSUM_FILE" --clobber
-          else
-            gh release create "$RELEASE_TAG" "$APK_FILE" "$CHECKSUM_FILE" \
-              --title "ZEVON Mobility $RELEASE_TAG" \
-              --generate-notes
+            echo "::error::Release $RELEASE_TAG already exists. Refusing to replace assets."
+            exit 1
           fi
+
+          gh release create "$RELEASE_TAG" \
+            --draft \
+            --title "ZEVON Mobility $RELEASE_TAG" \
+            --generate-notes
+          gh release upload "$RELEASE_TAG" "$APK_FILE" "$CHECKSUM_FILE"
+
+      - name: Remove temporary signing material
+        if: always()
+        run: rm -f zevon-release.keystore
