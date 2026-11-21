@@ -21,8 +21,6 @@ import java.util.Locale;
 
 @CapacitorPlugin(name = "ApkUpdater")
 public class ApkUpdaterPlugin extends Plugin {
-    private static final String RELEASE_PREFIX = "https://github.com/Vimlesh1996/zevonmobility/releases/download/";
-
     @PluginMethod
     public void getAppVersion(PluginCall call) {
         try {
@@ -106,25 +104,21 @@ public class ApkUpdaterPlugin extends Plugin {
             throw new SecurityException("Downloaded file is not a valid Android APK.");
         }
         String installedPackage = getContext().getPackageName();
-        if (!installedPackage.equals(candidate.packageName)) {
+        if (!ApkUpdatePolicy.isExpectedPackage(candidate.packageName, installedPackage)) {
             throw new SecurityException("APK package name does not match the installed ZEVON app.");
         }
 
         PackageInfo installed = manager.getPackageInfo(installedPackage, flags);
         String candidateSigner = signerFingerprint(candidate);
         String installedSigner = signerFingerprint(installed);
-        if (!candidateSigner.equalsIgnoreCase(expectedSigner) ||
-            !installedSigner.equalsIgnoreCase(expectedSigner) ||
-            !candidateSigner.equalsIgnoreCase(installedSigner)) {
+        if (!ApkUpdatePolicy.isMatchingSigner(candidateSigner, installedSigner, expectedSigner)) {
             throw new SecurityException("APK signing certificate does not match this ZEVON installation.");
         }
 
         long candidateVersionCode = packageVersionCode(candidate);
-        if (candidateVersionCode != expectedVersionCode) {
-            throw new SecurityException("APK versionCode does not match the verified release manifest.");
-        }
-        if (candidateVersionCode <= packageVersionCode(installed)) {
-            throw new SecurityException("Downloaded APK is not newer than the installed version.");
+        if (!ApkUpdatePolicy.isNewerExpectedVersion(
+            candidateVersionCode, expectedVersionCode, packageVersionCode(installed))) {
+            throw new SecurityException("APK versionCode does not match the manifest or is not newer than the installed version.");
         }
     }
 
@@ -136,11 +130,11 @@ public class ApkUpdaterPlugin extends Plugin {
         String expectedSigner = call.getString("signerSha256");
         Integer expectedVersionCode = call.getInt("versionCode");
 
-        if (expectedSha256 == null || !expectedSha256.matches("(?i)[a-f0-9]{64}")) {
+        if (!ApkUpdatePolicy.isSha256(expectedSha256)) {
             call.reject("A valid APK SHA-256 checksum is required.");
             return;
         }
-        if (expectedSigner == null || !expectedSigner.matches("(?i)[a-f0-9]{64}")) {
+        if (!ApkUpdatePolicy.isSha256(expectedSigner)) {
             call.reject("A valid signing certificate fingerprint is required.");
             return;
         }
@@ -148,8 +142,7 @@ public class ApkUpdaterPlugin extends Plugin {
             call.reject("A valid expected Android versionCode is required.");
             return;
         }
-        if (url == null || !url.startsWith(RELEASE_PREFIX) ||
-            !url.matches("https://github\\.com/Vimlesh1996/zevonmobility/releases/download/v[0-9]+\\.[0-9]+\\.[0-9]+/ZEVON-Mobility-v[0-9]+\\.[0-9]+\\.[0-9]+\\.apk")) {
+        if (!ApkUpdatePolicy.isOfficialReleaseUrl(url, fileName)) {
             call.reject("Only APK assets from the official ZEVON GitHub Releases are allowed.");
             return;
         }
@@ -157,12 +150,6 @@ public class ApkUpdaterPlugin extends Plugin {
             call.reject("Allow ZEVON to install updates in Android settings first.");
             return;
         }
-        if (!fileName.matches("ZEVON-Mobility-v[0-9]+\\.[0-9]+\\.[0-9]+\\.apk") ||
-            !url.endsWith("/" + fileName)) {
-            call.reject("APK file name does not match the official release URL.");
-            return;
-        }
-
         final String safeName = fileName;
         new Thread(() -> {
             File out = null;
