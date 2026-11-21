@@ -103,7 +103,7 @@ action.addEventListener('click',async()=>{
   }
   action.textContent='Downloading…';
   message.textContent='Downloading APK and checking package, version, signer and checksum…';
-  await p.downloadAndInstall({url:release.url,fileName:release.name,sha256:release.sha256});
+  await p.downloadAndInstall({url:release.url,fileName:release.name,sha256:release.sha256,signerSha256:release.signerSha256});
   message.textContent='APK verified. Android installer opened. Confirm the update to finish.';
  }catch(error){message.textContent=error.message||'Could not start the update. Please try again later.';}
  finally{action.disabled=false;action.textContent='Try again';}
