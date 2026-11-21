@@ -33,7 +33,11 @@ jobs:
           GH_TOKEN: ${{ github.token }}
         run: |
           cd ..
-          if git diff --quiet -- app/package-lock.json; then
+          if [ ! -f app/package-lock.json ]; then
+            echo "::error::npm did not generate app/package-lock.json"
+            exit 1
+          fi
+          if [ -z "$(git status --porcelain -- app/package-lock.json)" ]; then
             echo "package-lock.json is already current."
             exit 0
           fi
