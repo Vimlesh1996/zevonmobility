@@ -71,7 +71,7 @@ def main():
     parser.add_argument("--notes", default="A verified ZEVON Mobility update.")
     args = parser.parse_args()
     manifest = build_manifest(args.apk, args.tag, args.aapt, args.apksigner, args.notes)
-    Path(args.output).write_text(json.dumps(manifest, indent=2) + "\\n", encoding="utf-8")
+    Path(args.output).write_text(json.dumps(manifest, indent=2) + "\n", encoding="utf-8")
     print("Generated update manifest for", manifest["version"], "versionCode", manifest["versionCode"])
 
 
