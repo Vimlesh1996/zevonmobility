@@ -36,3 +36,8 @@ The updater script is intentionally not part of the service-worker precache. It 
 - Node tests cover the shared manifest schema, strict version encoding, generated signed-APK metadata, URL pinning, version ordering, native cache cleanup and app contract behavior.
 - Android CI builds a temporary signed release APK with a short-lived CI-only key to exercise the generated Gradle signing configuration. It does not use the production release key.
 - A physical install-over test and WebView cache inspection are still required before publishing a production update.
+
+
+## PR-D platform integration note
+
+The updater downloads the APK into the app's private cache. The Android app build narrows the existing Capacitor FileProvider to the dedicated `cache/apk-updates/` directory; it does not expose the rest of the app cache or external storage. The handoff uses a `content://` URI with a temporary read grant and ClipData. `installerLaunched` means Android's installer UI was opened, not that the user confirmed or completed installation.
