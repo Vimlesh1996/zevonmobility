@@ -20,7 +20,7 @@ The repository currently has a ruleset named `main`:
 - Ruleset ID: `27551879`
 - Target: branch
 - Enforcement: **disabled**
-- Ref include/exclude patterns: both empty (the ruleset is not scoped to `main`)
+- Ref include/exclude patterns: both empty (there is no explicit `main` branch pattern in the API snapshot; the owner should set an explicit `main` include and verify the resulting target in the UI)
 - Existing rules: prevent deletion, prevent non-fast-forward updates, and require a pull request with zero required approvals.
 - Required status checks: none.
 - Required conversation resolution: false.
