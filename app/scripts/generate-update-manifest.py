@@ -39,10 +39,14 @@ def build_manifest(apk_path, tag, aapt="aapt", apksigner="apksigner", notes=""):
     if package_name != PACKAGE or apk_version != version or int(code_text) != expected_code:
         raise ValueError("Signed APK package/version metadata does not match release tag")
     certs = subprocess.check_output([apksigner, "verify", "--print-certs", str(apk)], text=True, stderr=subprocess.STDOUT)
-    signer = re.search(r"Signer #1 certificate SHA-256 digest: ([a-fA-F0-9]{64})", certs)
-    if not signer:
-        raise ValueError("Unable to read exactly one SHA-256 signer certificate digest")
-    digest = hashlib.sha256(apk.read_bytes()).hexdigest()
+    signers = re.findall(r"Signer #[0-9]+ certificate SHA-256 digest: ([a-fA-F0-9]{64})", certs)
+    if len(signers) != 1:
+        raise ValueError("APK must have exactly one current SHA-256 signer certificate")
+    digest_state = hashlib.sha256()
+    with apk.open("rb") as stream:
+        for chunk in iter(lambda: stream.read(1024 * 1024), b""):
+            digest_state.update(chunk)
+    digest = digest_state.hexdigest()
     filename = "ZEVON-Mobility-v" + version + ".apk"
     if apk.name != filename:
         raise ValueError("APK filename must be " + filename)
@@ -52,7 +56,7 @@ def build_manifest(apk_path, tag, aapt="aapt", apksigner="apksigner", notes=""):
         "packageName": PACKAGE,
         "apkUrl": "https://github.com/" + REPOSITORY + "/releases/download/" + tag + "/" + filename,
         "sha256": digest,
-        "signerSha256": signer.group(1).upper(),
+        "signerSha256": signers[0].upper(),
         "notes": notes[:1000],
     }
 
