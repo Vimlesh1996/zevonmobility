@@ -48,7 +48,7 @@ jobs:
     environment:
       name: zevon-production-release
     permissions:
-      contents: write
+      contents: read
     defaults:
       run:
         working-directory: app
@@ -262,23 +262,50 @@ jobs:
           if-no-files-found: error
           retention-days: 7
 
-      - name: Create verified GitHub Release
+      - name: Upload production release payload
         if: github.event_name == 'push'
-        env:
-          GH_TOKEN: ${{ github.token }}
-          RELEASE_TAG: ${{ steps.build-inputs.outputs.release_tag }}
-        run: |
-          set -euo pipefail
-          APK_FILE="ZEVON-Mobility-${RELEASE_TAG}.apk"
-          CHECKSUM_FILE="${APK_FILE}.sha256"
-          if gh release view "$RELEASE_TAG" >/dev/null 2>&1; then
-            echo "::error::Release $RELEASE_TAG already exists. Refusing to replace assets."
-            exit 1
-          fi
-          gh release create "$RELEASE_TAG" "$APK_FILE" "$CHECKSUM_FILE" update.json \
-            --title "ZEVON Mobility $RELEASE_TAG" --generate-notes
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: zevon-release-payload-${{ steps.build-inputs.outputs.release_tag }}
+          path: |
+            app/ZEVON-Mobility-${{ steps.build-inputs.outputs.release_tag }}.apk
+            app/ZEVON-Mobility-${{ steps.build-inputs.outputs.release_tag }}.apk.sha256
+            app/update.json
+          if-no-files-found: error
+          retention-days: 1
 
       - name: Remove temporary signing material
         if: always()
         working-directory: app
         run: rm -f zevon-release.keystore
+
+  publish-release:
+    if: github.event_name == 'push'
+    needs: signed-release
+    name: Publish verified signed APK
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - name: Download verified release payload
+        uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4
+        with:
+          name: zevon-release-payload-${{ github.ref_name }}
+          path: release-payload
+
+      - name: Create verified GitHub Release
+        env:
+          GH_TOKEN: ${{ github.token }}
+          RELEASE_TAG: ${{ github.ref_name }}
+        run: |
+          set -euo pipefail
+          cd release-payload
+          if gh release view "$RELEASE_TAG" >/dev/null 2>&1; then
+            echo "::error::Release $RELEASE_TAG already exists. Refusing to replace assets."
+            exit 1
+          fi
+          gh release create "$RELEASE_TAG" \
+            "ZEVON-Mobility-${RELEASE_TAG}.apk" \
+            "ZEVON-Mobility-${RELEASE_TAG}.apk.sha256" \
+            update.json \
+            --title "ZEVON Mobility $RELEASE_TAG" --generate-notes
