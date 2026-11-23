@@ -215,3 +215,17 @@ Work in this order. Keep each PR narrowly scoped and based on a freshly checked 
 - Added the scoped PR-A through PR-E remediation plan and acceptance matrix.
 - No application code, workflow, branch protection, secrets, signing keys, Firebase configuration, release assets or production website settings were changed by this reconciliation.
 - Next action: inspect current source and test infrastructure again, then implement PR-A on an isolated branch after confirming the feature branch has not advanced. Gemini should review the resulting diff before merge.
+
+
+### 2026-11-23 — PR-A merged; PR-B implementation started
+
+- **Owner/role:** Project Owner authorized merge after CI success; ChatGPT implemented the approved merge sequence; Gemini provided conditional final approval.
+- **Scope:** PR #16 native APK updater download hardening (findings 1–3).
+- **Branch / commit:** `fix/apk-updater-download-hardening` at `b825f946b172229b7cf577b2e4eb9cbb78cb75a1`; squash-merged into `feature/customer-app-rebuild` as `68c951c2dfe85ef6dea6932c8aeadeadb3934c9c`.
+- **Files changed:** `ApkUpdatePolicy.java`, `ApkUpdaterPlugin.java`, `ApkUpdatePolicyTest.java`.
+- **PR:** [#16](https://github.com/Vimlesh1996/zevonmobility/pull/16) — merged.
+- **Tests and CI evidence:** [Android CI run #45151277811](https://github.com/Vimlesh1996/zevonmobility/actions/runs/45151277811) completed successfully; build job `137612998123` completed with conclusion `success`.
+- **Gemini review:** Approved for merge contingent on CI #45151277811 success; condition satisfied.
+- **Project Owner decision:** Explicitly authorized marking PR #16 ready and merging after successful CI.
+- **Remaining risks / follow-ups:** Live release redirect verification and physical-device signed upgrade validation remain production-release gates. The 100 MiB download cap remains provisional pending APK size/growth confirmation. PR-A merge does not authorize production release.
+- **PR-B started:** Created isolated branch `feat/update-manifest-contract` from updated `feature/customer-app-rebuild` at merge commit `68c951c2dfe85ef6dea6932c8aeadeadb3934c9c`. Scope: manifest schema alignment, signed-release `update.json` generation, strict version parsing and dynamic CI assertions.
