@@ -244,3 +244,17 @@ Work in this order. Keep each PR narrowly scoped and based on a freshly checked 
 - **Remaining risks / follow-ups:** Await CI and Gemini review. Confirm real signed release APK metadata and signer fingerprint before first production release. PR-C workflow security controls and PR-D Android platform validation remain separate workstreams.
 
 - **CI update:** Android CI run [#45152571060](https://github.com/Vimlesh1996/zevonmobility/actions/runs/45152571060) completed with `success` on PR #17 head `811624a8e90ad8f2c7afe97b2b7d6bfea0b92666`. All workflow steps passed, including Node lint/tests, dynamic version derivation, Gradle debug/temporary signed APK build, and artifact upload. PR #17 remains open, draft, and unmerged pending Gemini's line-by-line review and Project Owner approval.
+
+
+### 2026-11-23 — PR-B approved and merged; PR-C branch opened
+
+- **Owner/role:** Project Owner explicitly authorized PR #17 merge. Gemini completed the line-by-line audit and approved the reviewed head.
+- **Scope:** PR-B manifest contract and version consistency (findings 5–7 and 11).
+- **Branch / reviewed commit:** `feat/update-manifest-contract` at `811624a8e90ad8f2c7afe97b2b7d6bfea0b92666`.
+- **PR:** [#17](https://github.com/Vimlesh1996/zevonmobility/pull/17) — marked ready and squash-merged into `feature/customer-app-rebuild`.
+- **Merge commit:** `6a396a124b73c8aa34c722367e8c3d7d761bce93`.
+- **Tests and CI evidence:** [Android CI run #45152571060](https://github.com/Vimlesh1996/zevonmobility/actions/runs/45152571060) completed successfully on the reviewed head.
+- **Gemini review:** Final line-by-line sign-off: APPROVED FOR MERGE, subject to Project Owner authorization. Schema parity, native version/tag/filename checks, dynamic CI assertions, and signed-release manifest generation were verified.
+- **Project Owner decision:** Explicit approval received in chat; PR #17 merged only into `feature/customer-app-rebuild`. No merge to `main`, production release, website deployment, Firebase change, or signing-key operation was authorized or performed.
+- **Remaining risks / follow-ups:** PR-C must address least-privilege workflow permissions, production environment approval gate, immutable action SHA pins, `npm ci`, keystore cleanup and signing-key lifecycle safeguards. Permanent production signing identity, live redirect chain, and physical-device signed upgrade remain release gates.
+- **PR-C isolated branch:** Created `feat/pr-c-signed-release-security` from merge commit `6a396a124b73c8aa34c722367e8c3d7d761bce93`; no PR-C code changes have been made yet.
