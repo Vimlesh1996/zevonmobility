@@ -267,9 +267,9 @@ public class ApkUpdaterPlugin extends Plugin {
                 response.put("bytes", out.length());
                 new Handler(Looper.getMainLooper()).post(() -> call.resolve(response));
             } catch (Exception e) {
-                if (out != null && out.exists() && !out.delete()) {
+                if (out != null && out.exists()) {
                     // Best-effort cleanup: never retain a partial or rejected APK.
-                    out.deleteOnExit();
+                    out.delete();
                 }
                 String error = e.getMessage() == null
                     ? "Unable to download or verify the APK update."
