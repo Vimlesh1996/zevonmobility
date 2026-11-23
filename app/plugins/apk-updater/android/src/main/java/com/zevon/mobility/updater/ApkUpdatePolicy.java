@@ -26,7 +26,6 @@ final class ApkUpdatePolicy {
         "github.com",
         "objects.githubusercontent.com",
         "release-assets.githubusercontent.com",
-        "githubusercontent.com"
     ));
 
     private ApkUpdatePolicy() {}
