@@ -6,6 +6,7 @@ const os=require('node:os');
 const path=require('node:path');
 const {execFileSync}=require('node:child_process');
 const script=path.join(__dirname,'..','scripts','generate-update-manifest.py');
+const contract=require('../www/update-manifest.js');
 function fixture(){
  const root=fs.mkdtempSync(path.join(os.tmpdir(),'zevon-manifest-'));
  const apk=path.join(root,'ZEVON-Mobility-v1.0.9.apk');
@@ -25,6 +26,7 @@ test('manifest is generated from the signed APK metadata and exact bytes',()=>{
   const data=JSON.parse(fs.readFileSync(output,'utf8'));
   const crypto=require('node:crypto');
   assert.deepEqual(Object.keys(data),['version','versionCode','packageName','apkUrl','sha256','signerSha256','notes']);
+  assert.doesNotThrow(()=>contract.validate(data));
   assert.equal(data.version,'1.0.9');
   assert.equal(data.versionCode,1000009);
   assert.equal(data.packageName,'com.zevon.mobility');
