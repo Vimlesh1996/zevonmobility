@@ -116,3 +116,102 @@ All links below refer to feature commit `63a14de10a4e3e6eed875d08c5a0e67fc1b4882
 - **Gemini review:** Pending / Approved / Changes requested
 - **Project Owner decision:**
 - **Remaining risks / follow-ups:**
+
+
+## 9. Gemini line-by-line audit — Part 1 and Part 2 (23 November 2026)
+
+**Audited source snapshot:** `63a14de10a4e3e6eed875d08c5a0e67fc1b4882c`  
+**Reviewer:** Google Gemini  
+**Disposition:** Findings accepted for remediation planning. Acceptance here does not mean code has been changed or that every proposed implementation detail is final; implementation must preserve the controls and tests below.
+
+### Findings register
+
+| ID | Severity | Finding | Disposition / planned treatment |
+|---|---|---|---|
+| 1 | High | No maximum APK download size | Blocking. Add a configurable hard cap (100 MiB provisional; confirm against real release APK sizes), enforce while streaming before writing further bytes, delete partial file and reject. |
+| 2 | High | Automatic HTTP redirects are not validated | Blocking. Disable automatic redirects; manually follow a small bounded number of redirects and validate HTTPS plus exact allowed hosts on every hop. Initial candidate hosts: `github.com`, `objects.githubusercontent.com`, `release-assets.githubusercontent.com`; verify actual GitHub release redirect chain before finalizing. |
+| 3 | Medium | No single-flight download guard | Blocking for release. Add an atomic concurrency guard; reject a second request and release the guard on every terminal path, including exceptions and thread-start failure. |
+| 4 | Medium | FileProvider cache path and Android 13+ notification permission need verification | Blocking for enabling FCM notifications / installer handoff. Inspect the merged app manifest and provider paths, test cache URI resolution, and implement runtime notification permission handling for API 33+ where needed. Do not add permissions blindly to a library manifest without checking merge behavior. |
+| 5 | Medium | Android CI contains hardcoded v1.0.9 / 1000009 assertions | Non-blocking for the audited v1.0.9 configuration; fix before next version bump. Establish one version source and derive both versionName and versionCode dynamically. |
+| 6 | Low | Java and JavaScript manifest/version validation differ | Fix alongside manifest contract work. Align strict semantic version rules and ensure tag version equals APK filename version before presenting the banner. |
+| 7 | Critical | Signed release workflow omits update.json | Critical release blocker. Generate manifest from the actual signed APK and certificate, validate required fields and attach it to the same GitHub Release as APK and SHA-256. Required fields identified by reviewer: `apkUrl`, `sha256`, `signerSha256`, `version`, `versionCode`, `packageName`. Verify exact schema against current JS/native consumers before implementation. |
+| 8 | High | Workflow-wide contents:write and no production approval gate | Blocking. Default to `contents: read`; isolate release publication with `contents: write` only where required. Add a protected GitHub Environment approval gate before the release job can access production signing secrets or publish. |
+| 9 | High | Mutable action tags and npm install without lockfile | Blocking for release workflow. Pin third-party actions to verified immutable full SHAs (reuse vetted pins from Android CI where compatible); use `npm ci` and require a committed lockfile. |
+| 10 | Medium | Keystore cleanup and signing-key lifecycle controls are weak | Blocking until lifecycle is confirmed. Add best-effort cleanup of decoded keystore on all job exits; recognize hosted runners are ephemeral and secure deletion cannot be guaranteed by `shred`. Do not disable/delete the key-generation workflow until the owner confirms the permanent production keystore is backed up offline, its fingerprint is verified, and GitHub secrets contain the matching key. Add a strong manual confirmation / environment gate or retire the workflow after that confirmation. Treat the one-time artifact as highly sensitive; verify its access and whether it was ever downloaded. |
+| 11 | Low | Release tag parser accepts leading zeros and unbounded minor/patch values | Fix with shared strict version parsing. Reject leading zeros and enforce the versionCode encoding limits (minor and patch <= 999) before signing. |
+
+### Scoped implementation PR plan
+
+Work in this order. Keep each PR narrowly scoped and based on a freshly checked feature branch head. Do not merge or release automatically.
+
+#### PR-A — Native APK download hardening (Findings 1–3)
+
+- Add a maximum byte count during streaming, with early abort and partial-file cleanup.
+- Replace automatic redirects with bounded manual redirect handling; require HTTPS and exact allowlisted hosts at each hop.
+- Add an atomic single-download guard with complete reset behavior.
+- Add unit/instrumentation coverage for oversized streams, rejected HTTP/non-allowlisted redirects, valid release CDN redirects, rapid double taps, and lock reset after failure.
+- Keep package, version, checksum and signer verification in the existing trust chain.
+
+#### PR-B — Manifest contract and version consistency (Findings 5–7, 11)
+
+- Confirm the exact manifest schema consumed by `app/www/apk-updater.js` and the native Java policy.
+- Create `update.json` from the built signed APK: semantic version, encoded versionCode, package name, canonical release APK URL, SHA-256 and signing-certificate SHA-256.
+- Upload the manifest with APK and checksum in the same release operation; fail the workflow if any field or asset is missing/mismatched.
+- Align JS and Java validation, including strict version syntax, tag/filename agreement and versionCode bounds.
+- Replace hardcoded CI version assertions with derived values from a single version source; add parser/schema tests.
+- Test the manifest-generation logic without publishing a production release.
+
+#### PR-C — Signed-release workflow security (Findings 8–10)
+
+- Set least-privilege workflow defaults and isolate publication permissions to the release-publishing job.
+- Add a protected production-release environment approval gate before production signing secrets are made available.
+- Pin checkout/setup actions to verified full commit SHAs; use `npm ci` with the checked-in lockfile.
+- Add cleanup handling for the decoded keystore and temporary signing files; never print secret values.
+- Audit artifact access and key-generation workflow lifecycle. Do not run key generation or rotate keys as part of this PR.
+- Confirm the existing permanent production key and fingerprint before any release attempt.
+
+#### PR-D — Android platform integration and notification readiness (Finding 4)
+
+- Inspect generated/merged Android manifest and actual FileProvider XML configuration.
+- Verify the FileProvider authority and cache-path access with instrumentation tests.
+- Verify `canRequestPackageInstalls()` and user-confirmed installer handoff across supported Android versions.
+- Add and request `POST_NOTIFICATIONS` appropriately for Android 13+ before enabling FCM notification nudges.
+- Keep FCM nudges disabled until updater/release tests and device validation pass.
+
+#### PR-E — Repository governance and production deployment protection
+
+- Enable `main` branch rules requiring relevant CI and review; block direct unreviewed changes.
+- Add production website deployment environment/path guards and verify that Android-only changes cannot unintentionally alter website routes or trigger production deployment.
+- Verify permissions and required check names against actual workflow runs before enforcing rules.
+- This may require repository administration permissions; if unavailable, provide exact settings and request owner/admin action rather than claiming completion.
+
+### Test and acceptance matrix
+
+- [ ] Oversized APK aborts at the configured cap, partial file is removed, updater rejects.
+- [ ] HTTP downgrade and untrusted redirect host are rejected; expected HTTPS GitHub release CDN redirects succeed.
+- [ ] Concurrent second download is rejected; lock resets after success, exception and thread-start failure.
+- [ ] Manifest schema is validated; APK URL, checksum, signer fingerprint, package, version and versionCode match the actual signed APK.
+- [ ] Java and JS reject malformed versions, leading zeros, mismatched tag/filename and invalid versionCode ranges.
+- [ ] Release workflow waits for production environment approval before accessing signing secrets / publishing.
+- [ ] Release workflow uses least privilege, immutable action SHAs and `npm ci`.
+- [ ] Keystore cleanup runs on success and failure; signing key lifecycle and artifact access are confirmed.
+- [ ] FileProvider cache URI and installer handoff work on physical Android devices.
+- [ ] Notification permission flow is verified on Android 13+ before FCM nudge activation.
+- [ ] Main branch protection and production deployment guard are verified.
+- [ ] Permanent-key upgrade succeeds on Android 12, 13 and 14/15 without uninstalling the existing app.
+
+### Important implementation cautions
+
+- The 100 MiB limit is provisional until actual APK sizes and expected growth are measured.
+- Redirect allowlisting must use exact hostnames, not a broad suffix such as `githubusercontent.com`; validate scheme, host, port and hop count on every redirect.
+- The FCM notification permission requirement is relevant to notification display/permission behavior on Android 13+, not a reason to enable FCM before the updater is production-safe.
+- A GitHub Environment gate should protect the job that receives production signing secrets, not merely a later publishing job after secrets have already been exposed.
+- Removing a keystore file on an ephemeral hosted runner is cleanup hygiene, not a substitute for secure secret storage or key lifecycle management.
+- Do not generate a new signing key, overwrite GitHub signing secrets, disable the key-generation workflow, create a production tag, or publish a release until the current permanent key's custody and fingerprint are confirmed.
+
+### 2026-11-23 — Gemini Part 2 received and reconciled
+
+- Gemini reported all 11 findings across the seven audited files.
+- Added the scoped PR-A through PR-E remediation plan and acceptance matrix.
+- No application code, workflow, branch protection, secrets, signing keys, Firebase configuration, release assets or production website settings were changed by this reconciliation.
+- Next action: inspect current source and test infrastructure again, then implement PR-A on an isolated branch after confirming the feature branch has not advanced. Gemini should review the resulting diff before merge.
