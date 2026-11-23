@@ -11,7 +11,7 @@ REQUIRED_ROOT_FILES = ("index.html", "404.html", "robots.txt", "sitemap.xml", "C
 FORBIDDEN_PAGES_DEPLOY_PATTERNS = (
     re.compile(r"actions/deploy-pages@", re.IGNORECASE),
     re.compile(r"peaceiris/actions-gh-pages@", re.IGNORECASE),
-    re.compile(r"^\\s*pages\\s*:\\s*write\\s*$", re.MULTILINE),
+    re.compile(r"^\s*pages\s*:\s*write\s*$", re.MULTILINE),
 )
 
 
