@@ -229,3 +229,16 @@ Work in this order. Keep each PR narrowly scoped and based on a freshly checked 
 - **Project Owner decision:** Explicitly authorized marking PR #16 ready and merging after successful CI.
 - **Remaining risks / follow-ups:** Live release redirect verification and physical-device signed upgrade validation remain production-release gates. The 100 MiB download cap remains provisional pending APK size/growth confirmation. PR-A merge does not authorize production release.
 - **PR-B started:** Created isolated branch `feat/update-manifest-contract` from updated `feature/customer-app-rebuild` at merge commit `68c951c2dfe85ef6dea6932c8aeadeadb3934c9c`. Scope: manifest schema alignment, signed-release `update.json` generation, strict version parsing and dynamic CI assertions.
+
+
+### 2026-11-23 — PR-B opened for independent review
+
+- **Owner/role:** ChatGPT prepared the scoped PR-B implementation; Project Owner retains merge approval; Gemini independent review pending.
+- **Scope:** Findings 5–7 and 11: shared manifest schema, signed-APK `update.json` generation, JavaScript/native version agreement, strict versionCode bounds and dynamic CI assertions.
+- **Branch / commit:** `feat/update-manifest-contract` at `811624a8e90ad8f2c7afe97b2b7d6bfea0b92666` when PR #17 was opened; branch continues to receive CI-driven fixes if needed.
+- **Files changed:** `.github/workflows/zevon-android.yml`; `.github/workflows/zevon-signed-apk-release.yml`; `app/www/update-manifest.js`; `app/www/apk-updater.js`; `app/www/index.html`; `app/scripts/generate-update-manifest.py`; `app/plugins/apk-updater/android/src/main/java/com/zevon/mobility/updater/ApkUpdatePolicy.java`; `ApkUpdaterPlugin.java`; JVM/Node tests; updater README.
+- **PR:** [#17](https://github.com/Vimlesh1996/zevonmobility/pull/17) — open draft, targeting `feature/customer-app-rebuild`.
+- **Tests and CI evidence:** Android CI run [#45152571060](https://github.com/Vimlesh1996/zevonmobility/actions/runs/45152571060) started for PR #17; Android SDK setup was in progress at the time of this entry. No success claim yet.
+- **Gemini review:** Pending.
+- **Project Owner decision:** PR-B scope authorized; no merge or production release approval implied.
+- **Remaining risks / follow-ups:** Await CI and Gemini review. Confirm real signed release APK metadata and signer fingerprint before first production release. PR-C workflow security controls and PR-D Android platform validation remain separate workstreams.
