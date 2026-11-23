@@ -258,3 +258,16 @@ Work in this order. Keep each PR narrowly scoped and based on a freshly checked 
 - **Project Owner decision:** Explicit approval received in chat; PR #17 merged only into `feature/customer-app-rebuild`. No merge to `main`, production release, website deployment, Firebase change, or signing-key operation was authorized or performed.
 - **Remaining risks / follow-ups:** PR-C must address least-privilege workflow permissions, production environment approval gate, immutable action SHA pins, `npm ci`, keystore cleanup and signing-key lifecycle safeguards. Permanent production signing identity, live redirect chain, and physical-device signed upgrade remain release gates.
 - **PR-C isolated branch:** Created `feat/pr-c-signed-release-security` from merge commit `6a396a124b73c8aa34c722367e8c3d7d761bce93`; no PR-C code changes have been made yet.
+
+
+### 2026-11-23 — PR-C opened for signed-release workflow security
+
+- **Owner/role:** Project Owner authorized proceeding to PR-C after PR-B merge; ChatGPT implemented the initial scoped workflow hardening. Gemini review and PR-C merge authorization are pending.
+- **Scope:** Gemini findings 8–10: least-privilege release workflow permissions, production environment gate, immutable action pins, locked npm installation, and decoded-keystore cleanup.
+- **Branch / commit:** `feat/pr-c-signed-release-security` at `53dee129f8bfde282d63d9c8c6aa1e0ab43f6e2f` (current PR head at opening).
+- **Files changed:** `.github/workflows/zevon-signed-apk-release.yml`; `.github/workflows/zevon-android.yml` (PR path filter); `docs/PR-C-RELEASE-GATE-SETUP.md`.
+- **PR:** [#18](https://github.com/Vimlesh1996/zevonmobility/pull/18) — open draft, targeting `feature/customer-app-rebuild`.
+- **Tests and CI evidence:** Android CI run [#45163116561](https://github.com/Vimlesh1996/zevonmobility/actions/runs/45163116561) was observed in progress for head `53dee129f8bfde282d63d9c8c6aa1e0ab43f6e2f`; no success claim yet.
+- **Gemini review:** Pending.
+- **Project Owner decision:** Authorized starting PR-C only. PR #18 is intentionally draft and unmerged; no production tag/release, `main` merge, website deployment, Firebase change, or key rotation occurred.
+- **Remaining risks / follow-ups:** The workflow references GitHub Environment `zevon-production-release`, but required reviewers and environment-level signing secrets must be configured and verified by a repository owner before any production tag is pushed. The existing key-generation workflow was deliberately left unchanged and not dispatched: it packages a keystore and credential material in an Actions artifact. Its artifact visibility/history and permanent-key custody need a separate owner-led audit before any redesign or retirement. The PR-C documentation records these safeguards and manual steps.
