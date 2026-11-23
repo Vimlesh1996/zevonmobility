@@ -280,8 +280,6 @@ public class ApkUpdaterPlugin extends Plugin {
                 if (connection != null) connection.disconnect();
                 ApkUpdatePolicy.releaseDownload(DOWNLOAD_IN_PROGRESS);
             }
-        }, "zevon-apk-update");
-
             }, "zevon-apk-update");
             worker.start();
         } catch (RuntimeException e) {
