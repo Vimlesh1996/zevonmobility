@@ -174,6 +174,7 @@ public class ApkUpdaterPlugin extends Plugin {
         String fileName = call.getString("fileName", "zevon-update.apk");
         String expectedSha256 = call.getString("sha256");
         String expectedSigner = call.getString("signerSha256");
+        String expectedVersion = call.getString("version");
         Integer expectedVersionCode = call.getInt("versionCode");
 
         if (!ApkUpdatePolicy.isSha256(expectedSha256)) {
@@ -188,7 +189,11 @@ public class ApkUpdaterPlugin extends Plugin {
             call.reject("A valid expected Android versionCode is required.");
             return;
         }
-        if (!ApkUpdatePolicy.isOfficialReleaseUrl(url, fileName)) {
+        if (!ApkUpdatePolicy.isMatchingVersion(expectedVersion, expectedVersionCode == null ? 0L : expectedVersionCode.longValue())) {
+            call.reject("Manifest version and versionCode do not match.");
+            return;
+        }
+        if (!ApkUpdatePolicy.isOfficialReleaseUrl(url, fileName, expectedVersion)) {
             call.reject("Only APK assets from the official ZEVON GitHub Releases are allowed.");
             return;
         }
