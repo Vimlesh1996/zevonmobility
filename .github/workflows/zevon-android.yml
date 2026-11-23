@@ -92,9 +92,19 @@ jobs:
             -keyalg RSA -keysize 2048 -validity 2 \
             -dname "CN=ZEVON CI, OU=Build, O=ZEVON, C=IN"
 
-      - name: Configure v1.0.9 release metadata and signing
+      - name: Read app version as the CI source of truth
+        id: app-version
+        run: |
+          VERSION="$(node -p "require('./package.json').version")"
+          VERSION_CODE="$(node -e "const c=require('./www/update-manifest.js');process.stdout.write(String(c.versionCode(process.argv[1])))" "$VERSION")"
+          test "$VERSION_CODE" -gt 0
+          echo "version=$VERSION" >> "$GITHUB_OUTPUT"
+          echo "version_code=$VERSION_CODE" >> "$GITHUB_OUTPUT"
+          echo "tag=v$VERSION" >> "$GITHUB_OUTPUT"
+
+      - name: Configure app version metadata and signing
         env:
-          RELEASE_TAG: v1.0.9
+          RELEASE_TAG: ${{ steps.app-version.outputs.tag }}
           KEY_ALIAS: ci-release
           STORE_PASSWORD: ci-only-temporary-password
           KEY_PASSWORD: ci-only-temporary-password
@@ -108,6 +118,8 @@ jobs:
 
       - name: Build debug and temporary signed release APKs
         env:
+          EXPECTED_VERSION: ${{ steps.app-version.outputs.version }}
+          EXPECTED_VERSION_CODE: ${{ steps.app-version.outputs.version_code }}
           KEY_ALIAS: ci-release
           STORE_PASSWORD: ci-only-temporary-password
           KEY_PASSWORD: ci-only-temporary-password
@@ -121,8 +133,8 @@ jobs:
           APK="android/app/build/outputs/apk/release/app-release.apk"
           BADGING="$("$AAPT" dump badging "$APK")"
           echo "$BADGING" | grep -F "package: name='com.zevon.mobility'"
-          echo "$BADGING" | grep -F "versionName='1.0.9'"
-          echo "$BADGING" | grep -F "versionCode='1000009'"
+          echo "$BADGING" | grep -F "versionName='$EXPECTED_VERSION'"
+          echo "$BADGING" | grep -F "versionCode='$EXPECTED_VERSION_CODE'"
           "$APKSIGNER" verify --verbose "$APK"
           rm -f zevon-release.keystore
 

@@ -38,11 +38,38 @@ final class ApkUpdatePolicy {
         return value != null && value.matches("(?i)[a-f0-9]{64}");
     }
 
+    static long versionCodeFor(String version) {
+        if (version == null) return 0L;
+        Matcher match = Pattern.compile("^" + VERSION + "$").matcher(version);
+        if (!match.matches()) return 0L;
+        try {
+            long major = Long.parseLong(match.group(1));
+            long minor = Long.parseLong(match.group(2));
+            long patch = Long.parseLong(match.group(3));
+            if (minor > 999L || patch > 999L) return 0L;
+            long code = major * 1000000L + minor * 1000L + patch;
+            return code > 0L && code <= 2147483647L ? code : 0L;
+        } catch (NumberFormatException ignored) {
+            return 0L;
+        }
+    }
+
+    static boolean isMatchingVersion(String version, long versionCode) {
+        return versionCode > 0L && versionCodeFor(version) == versionCode;
+    }
+
     static boolean isOfficialReleaseUrl(String url, String fileName) {
         if (url == null || fileName == null || !OFFICIAL_FILE.matcher(fileName).matches()) return false;
         Matcher match = OFFICIAL_URL.matcher(url);
         if (!match.matches() || !url.endsWith("/" + fileName)) return false;
-        return match.group(1).equals(match.group(5));
+        return match.group(1).equals(match.group(5)) && versionCodeFor(match.group(1)) > 0L;
+    }
+
+    static boolean isOfficialReleaseUrl(String url, String fileName, String expectedVersion) {
+        return isMatchingVersion(expectedVersion, versionCodeFor(expectedVersion)) &&
+            isOfficialReleaseUrl(url, fileName) &&
+            url.contains("/releases/download/v" + expectedVersion + "/") &&
+            fileName.equals("ZEVON-Mobility-v" + expectedVersion + ".apk");
     }
 
     /**
