@@ -1,5 +1,9 @@
 package com.zevon.mobility.updater;
 
+import java.io.File;
+import java.io.FileOutputStream;
+import java.io.IOException;
+import java.io.InputStream;
 import java.net.URL;
 import java.util.Arrays;
 import java.util.HashSet;
@@ -25,7 +29,7 @@ final class ApkUpdatePolicy {
     private static final Set<String> TRUSTED_DOWNLOAD_HOSTS = new HashSet<>(Arrays.asList(
         "github.com",
         "objects.githubusercontent.com",
-        "release-assets.githubusercontent.com",
+        "release-assets.githubusercontent.com"
     ));
 
     private ApkUpdatePolicy() {}
@@ -64,6 +68,13 @@ final class ApkUpdatePolicy {
     }
 
     static URL resolveTrustedRedirect(URL current, String location) throws Exception {
+        return resolveTrustedRedirect(current, location, 0);
+    }
+
+    static URL resolveTrustedRedirect(URL current, String location, int redirectCount) throws Exception {
+        if (redirectCount < 0 || redirectCount >= MAX_REDIRECTS) {
+            throw new SecurityException("APK download exceeded the maximum redirect count.");
+        }
         if (current == null || location == null || location.trim().isEmpty()) {
             throw new SecurityException("The APK server returned an invalid redirect.");
         }
@@ -72,6 +83,33 @@ final class ApkUpdatePolicy {
             throw new SecurityException("APK redirect target is not an approved HTTPS GitHub host.");
         }
         return next;
+    }
+
+    /**
+     * Copies an untrusted stream to disk with a strict byte ceiling. Any rejected
+     * or failed copy removes the partial output; the caller owns the input stream.
+     */
+    static long copyBoundedToFile(InputStream in, File out, long maxBytes) throws IOException {
+        if (in == null || out == null || maxBytes < 0) {
+            throw new IllegalArgumentException("A valid input, output file and byte limit are required.");
+        }
+        long totalBytesRead = 0L;
+        try (FileOutputStream fos = new FileOutputStream(out)) {
+            byte[] buffer = new byte[8192];
+            int count;
+            while ((count = in.read(buffer)) != -1) {
+                if (totalBytesRead > maxBytes || count > maxBytes - totalBytesRead) {
+                    throw new SecurityException("APK exceeds the maximum permitted download size.");
+                }
+                totalBytesRead += count;
+                fos.write(buffer, 0, count);
+            }
+            fos.getFD().sync();
+            return totalBytesRead;
+        } catch (IOException | SecurityException e) {
+            if (out.exists()) out.delete();
+            throw e;
+        }
     }
 
     static boolean canAppendBytes(long totalBytesRead, long incomingBytes) {
