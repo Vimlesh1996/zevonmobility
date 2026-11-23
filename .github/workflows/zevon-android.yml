@@ -63,6 +63,9 @@ jobs:
       - name: Generate Android project
         run: npx cap add android
 
+      - name: Configure Android FileProvider and notification permission
+        run: python3 scripts/configure-android-platform.py
+
       - name: Disable Android cloud backup for local enquiry data
         run: |
           python3 - <<'PY'
@@ -139,10 +142,54 @@ jobs:
           "$APKSIGNER" verify --verbose "$APK"
           rm -f zevon-release.keystore
 
+      - name: Verify merged Android platform manifest
+        run: |
+          python3 - <<'PY'
+          import glob
+          import xml.etree.ElementTree as ET
+          from pathlib import Path
+          android = '{http://schemas.android.com/apk/res/android}'
+          candidates = glob.glob('android/app/build/intermediates/merged_manifest/debug/**/AndroidManifest.xml', recursive=True)
+          if len(candidates) != 1:
+              raise SystemExit(f'Expected one merged debug manifest, found {len(candidates)}: {candidates}')
+          manifest_path = Path(candidates[0])
+          manifest = ET.parse(manifest_path).getroot()
+          permissions = {p.get(android + 'name') for p in manifest.findall('uses-permission')}
+          required = {'android.permission.REQUEST_INSTALL_PACKAGES', 'android.permission.POST_NOTIFICATIONS'}
+          missing = required - permissions
+          if missing:
+              raise SystemExit(f'Merged manifest is missing permissions: {sorted(missing)}')
+          app = manifest.find('application')
+          providers = [p for p in app.findall('provider') if p.get(android + 'authorities') == 'com.zevon.mobility.fileprovider']
+          if len(providers) != 1:
+              raise SystemExit(f'Expected exactly one ZEVON FileProvider, found {len(providers)}')
+          provider = providers[0]
+          if provider.get(android + 'name') != 'androidx.core.content.FileProvider' or provider.get(android + 'exported') != 'false' or provider.get(android + 'grantUriPermissions') != 'true':
+              raise SystemExit('Merged FileProvider security attributes are incorrect')
+          metadata = [m for m in provider.findall('meta-data') if m.get(android + 'name') == 'android.support.FILE_PROVIDER_PATHS']
+          if len(metadata) != 1 or metadata[0].get(android + 'resource') != '@xml/file_paths':
+              raise SystemExit('Merged FileProvider paths metadata is incorrect')
+          source_paths = ET.parse('android/app/src/main/res/xml/file_paths.xml').getroot()
+          entries = list(source_paths)
+          if len(entries) != 1 or entries[0].tag != 'cache-path' or entries[0].get('path') != 'apk-updates/':
+              raise SystemExit('FileProvider must expose only cache/apk-updates/')
+          print(f'Validated merged manifest: {manifest_path}')
+          PY
+
       - name: Upload debug APK
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
         with:
           name: zevon-mobility-debug-apk
           path: app/android/app/build/outputs/apk/debug/app-debug.apk
+          if-no-files-found: error
+          retention-days: 14
+
+      - name: Upload merged manifest audit evidence
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: zevon-android-platform-manifest
+          path: |
+            app/android/app/build/intermediates/merged_manifest/debug/**/AndroidManifest.xml
+            app/android/app/src/main/res/xml/file_paths.xml
           if-no-files-found: error
           retention-days: 14
