@@ -1,5 +1,6 @@
 package com.zevon.mobility.updater;
 
+import android.content.ClipData;
 import android.content.Intent;
 import android.content.pm.PackageInfo;
 import android.content.pm.PackageManager;
@@ -226,7 +227,14 @@ public class ApkUpdaterPlugin extends Plugin {
                     throw new SecurityException("APK exceeds the maximum permitted download size.");
                 }
 
-                out = new File(getContext().getCacheDir(), safeName);
+                File updateCache = new File(getContext().getCacheDir(), "apk-updates");
+                if (!updateCache.exists() && !updateCache.mkdirs()) {
+                    throw new IOException("Unable to create the private APK update cache.");
+                }
+                out = new File(updateCache, safeName);
+                if (!out.getCanonicalFile().getParentFile().equals(updateCache.getCanonicalFile())) {
+                    throw new SecurityException("APK filename resolves outside the update cache.");
+                }
                 try (InputStream in = new BufferedInputStream(connection.getInputStream())) {
                     ApkUpdatePolicy.copyBoundedToFile(in, out, ApkUpdatePolicy.MAX_APK_BYTES);
                 }
@@ -252,10 +260,16 @@ public class ApkUpdaterPlugin extends Plugin {
                 );
                 Intent install = new Intent(Intent.ACTION_VIEW);
                 install.setDataAndType(uri, "application/vnd.android.package-archive");
+                install.setClipData(ClipData.newUri(
+                    getContext().getContentResolver(), safeName, uri
+                ));
                 install.addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION | Intent.FLAG_ACTIVITY_NEW_TASK);
+                // Launching ACTION_VIEW transfers control to Android's package installer;
+                // the installer still requires an explicit user confirmation. This is not
+                // evidence that installation completed.
                 getContext().startActivity(install);
                 JSObject response = new JSObject();
-                response.put("downloaded", true);
+                response.put("installerLaunched", true);
                 response.put("bytes", out.length());
                 new Handler(Looper.getMainLooper()).post(() -> call.resolve(response));
             } catch (Exception e) {
