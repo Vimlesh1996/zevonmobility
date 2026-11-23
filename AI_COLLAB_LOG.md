@@ -375,3 +375,60 @@ Work in this order. Keep each PR narrowly scoped and based on a freshly checked 
 - **Current main:** `886fde756d16e80b35bcc284ece8168e619ab379`.
 - **Owner next steps:** Complete GitHub UI verification/configuration. Environment `zevon-production-release` must contain all four environment-scoped secrets: `ANDROID_KEYSTORE_BASE64`, `ANDROID_KEY_ALIAS`, `ANDROID_KEYSTORE_PASSWORD`, and `ANDROID_KEY_PASSWORD`; configure required reviewer(s). Verify Pages source is Deploy from a branch → `main` → `/(root)`, custom domain `zevonmobility.com`. Then activate ruleset #27551879 with include pattern `main` and required status check `Main branch governance`, preserving no bypass actors.
 - **Boundary:** No ruleset, Pages, environment, secret, reviewer, Firebase, signing key, production release or deploy settings were changed by the integration. Physical Android 12–15 signed upgrade testing remains pending.
+
+### 2026-11-23 — PR #22 approved and promoted: protected signed dry-run APK workflow
+
+- **Project Owner:** Explicit authorization received to mark PR #22 ready and squash-merge it into `main`.
+- **Independent review:** Gemini returned **APPROVED** for exact head `5c06de7734cb6d6a5415b29fa9871f5c526d3332`, noting that the raw YAML diff should be captured in this log.
+- **PR:** [#22](https://github.com/Vimlesh1996/zevonmobility/pull/22), `test/android-signed-dry-run-artifact` → `main`; one changed file only: `.github/workflows/zevon-signed-apk-release.yml`. No website root files changed.
+- **Latest-head CI:** [Workflow validation #45173035644](https://github.com/Vimlesh1996/zevonmobility/actions/runs/45173035644) succeeded (actionlint); [Main branch governance #45173035614](https://github.com/Vimlesh1996/zevonmobility/actions/runs/45173035614) succeeded. The signed APK workflow's PR validation run [#45173035768](https://github.com/Vimlesh1996/zevonmobility/actions/runs/45173035768) also completed successfully; this was validation only, not a signed build or release.
+- **Key YAML controls reviewed (excerpt):**
+
+```yaml
+permissions:
+  contents: read
+
+jobs:
+  signed-release:
+    if: github.event_name != 'pull_request'
+    environment:
+      name: zevon-production-release
+    permissions:
+      contents: read
+    # ... signing secrets are mapped only inside this protected job ...
+
+  publish-release:
+    if: github.event_name == 'push'
+    needs: signed-release
+    permissions:
+      contents: write
+    # ... creates the GitHub Release only for tag-push events ...
+```
+
+- **Manual dispatch safeguards (excerpt):**
+
+```yaml
+on:
+  workflow_dispatch:
+    inputs:
+      test_version:
+        required: true
+        default: "1.0.9"
+        type: string
+      dry_run:
+        required: true
+        default: true
+        type: boolean
+
+# In the manual-dispatch provenance check:
+if [ "${{ inputs.dry_run }}" != "true" ]; then
+  echo "::error::This manual workflow is artifact-only. dry_run must remain true."
+  exit 1
+fi
+```
+
+- **Dry-run output:** Manual dispatch checks out the current `feature/customer-app-rebuild` head, validates all four environment-scoped signing secrets, uses the existing signing identity, verifies package/version/versionCode/SHA-256/signer fingerprint, and uploads the APK plus verification metadata as a 7-day Actions artifact. It does not create a tag, GitHub Release, or production update manifest.
+- **Production path:** Only a tag-push event enters the `publish-release` job with `contents: write`; production manifest generation and release publication remain on that path.
+- **Project Owner decision:** Authorized PR #22 to be marked ready and squash-merged into `main`. No production release or website deployment was authorized.
+- **Test device:** Samsung Galaxy A16 5G, Android 16; ZEVON is not installed. Planned physical sequence: install signed v1.0.8 baseline, verify launch/version, then install signed v1.0.9 over it without uninstalling.
+- **Remaining gates:** Trigger `ZEVON Signed Direct APK Release` from `main` with `test_version=1.0.9` and `dry_run=true`; approve the `zevon-production-release` Environment gate; verify artifact metadata and signer before device installation. A GitHub Actions artifact alone does not provide an unauthenticated updater URL; end-to-end in-app update testing still requires a separate controlled staging manifest and HTTPS APK host. No production release until the remaining release gates and explicit owner approval are satisfied.
