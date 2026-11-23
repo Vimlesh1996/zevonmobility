@@ -8,26 +8,29 @@ const {execFileSync}=require('node:child_process');
 
 const appRoot=path.join(__dirname,'..');
 const script=path.join(appRoot,'scripts','configure-android-platform.py');
-const androidNs='http://schemas.android.com/apk/res/android';
 
 function fixture(){
  const root=fs.mkdtempSync(path.join(os.tmpdir(),'zevon-android-platform-'));
  const app=path.join(root,'android/app/src/main');
  fs.mkdirSync(path.join(app,'res/xml'),{recursive:true});
- fs.writeFileSync(path.join(app,'AndroidManifest.xml'),\`<?xml version="1.0" encoding="utf-8"?>
-<manifest xmlns:android="\${androidNs}">
- <application>
-  <provider android:name="androidx.core.content.FileProvider" android:authorities="\${applicationId}.fileprovider" android:exported="false" android:grantUriPermissions="true">
-   <meta-data android:name="android.support.FILE_PROVIDER_PATHS" android:resource="@xml/file_paths"/>
-  </provider>
- </application>
- <uses-permission android:name="android.permission.INTERNET"/>
-</manifest>\`);
- fs.writeFileSync(path.join(app,'res/xml/file_paths.xml'),\`<?xml version="1.0" encoding="utf-8"?>
-<paths xmlns:android="\${androidNs}">
- <external-path name="my_images" path="."/>
- <cache-path name="my_cache_images" path="."/>
-</paths>\`);
+ fs.writeFileSync(path.join(app,'AndroidManifest.xml'),[
+  '<?xml version="1.0" encoding="utf-8"?>',
+  '<manifest xmlns:android="http://schemas.android.com/apk/res/android">',
+  ' <application>',
+  '  <provider android:name="androidx.core.content.FileProvider" android:authorities="${applicationId}.fileprovider" android:exported="false" android:grantUriPermissions="true">',
+  '   <meta-data android:name="android.support.FILE_PROVIDER_PATHS" android:resource="@xml/file_paths"/>',
+  '  </provider>',
+  ' </application>',
+  ' <uses-permission android:name="android.permission.INTERNET"/>',
+  '</manifest>'
+ ].join('\n'));
+ fs.writeFileSync(path.join(app,'res/xml/file_paths.xml'),[
+  '<?xml version="1.0" encoding="utf-8"?>',
+  '<paths xmlns:android="http://schemas.android.com/apk/res/android">',
+  ' <external-path name="my_images" path="."/>',
+  ' <cache-path name="my_cache_images" path="."/>',
+  '</paths>'
+ ].join('\n'));
  return root;
 }
 
