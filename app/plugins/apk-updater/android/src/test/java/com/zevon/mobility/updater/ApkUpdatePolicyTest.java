@@ -1,6 +1,9 @@
 package com.zevon.mobility.updater;
 
 import org.junit.Test;
+import java.io.ByteArrayInputStream;
+import java.io.File;
+import java.io.IOException;
 import java.net.URL;
 import java.util.Arrays;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -74,6 +77,71 @@ public class ApkUpdatePolicyTest {
             fail("Untrusted redirect host must be rejected");
         } catch (SecurityException expected) {
             // Expected.
+        }
+    }
+
+    @Test
+    public void rejectsRedirectBeyondMaximumHopCount() throws Exception {
+        URL source = new URL(URL_VALUE);
+        assertEquals("release-assets.githubusercontent.com",
+            ApkUpdatePolicy.resolveTrustedRedirect(source,
+                "https://release-assets.githubusercontent.com/assets/file.apk",
+                ApkUpdatePolicy.MAX_REDIRECTS - 1).getHost());
+        try {
+            ApkUpdatePolicy.resolveTrustedRedirect(source,
+                "https://release-assets.githubusercontent.com/assets/file.apk",
+                ApkUpdatePolicy.MAX_REDIRECTS);
+            fail("Redirect beyond the configured hop limit must be rejected");
+        } catch (SecurityException expected) {
+            // Expected.
+        }
+    }
+
+    @Test
+    public void boundedStreamDeletesPartialFileWhenByteLimitIsExceeded() throws Exception {
+        File out = File.createTempFile("zevon-apk-limit-", ".apk");
+        byte[] payload = new byte[32];
+        try {
+            ApkUpdatePolicy.copyBoundedToFile(new ByteArrayInputStream(payload), out, 16);
+            fail("Oversized stream must be rejected");
+        } catch (SecurityException expected) {
+            assertFalse("Partial output must be deleted", out.exists());
+        } finally {
+            if (out.exists()) out.delete();
+        }
+    }
+
+    @Test
+    public void boundedStreamWritesWithinLimit() throws Exception {
+        File out = File.createTempFile("zevon-apk-ok-", ".apk");
+        byte[] payload = new byte[32];
+        try {
+            long copied = ApkUpdatePolicy.copyBoundedToFile(new ByteArrayInputStream(payload), out, 32);
+            assertEquals(32L, copied);
+            assertEquals(32L, out.length());
+        } finally {
+            if (out.exists()) out.delete();
+        }
+    }
+
+    @Test
+    public void boundedStreamDeletesPartialFileWhenInputFails() throws Exception {
+        File out = File.createTempFile("zevon-apk-io-", ".apk");
+        java.io.InputStream broken = new java.io.InputStream() {
+            private int reads;
+            @Override public int read() throws IOException {
+                if (reads++ == 0) return 65;
+                throw new IOException("simulated stream failure");
+            }
+        };
+        try {
+            ApkUpdatePolicy.copyBoundedToFile(broken, out, 100);
+            fail("I/O failure must propagate");
+        } catch (IOException expected) {
+            assertFalse("Partial output must be deleted", out.exists());
+        } finally {
+            if (out.exists()) out.delete();
+            broken.close();
         }
     }
 
