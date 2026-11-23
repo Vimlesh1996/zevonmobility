@@ -205,7 +205,8 @@ public class ApkUpdaterPlugin extends Plugin {
         }
 
         final String safeName = fileName;
-        Thread worker = new Thread(() -> {
+        try {
+            Thread worker = new Thread(() -> {
             File out = null;
             HttpURLConnection connection = null;
             try {
@@ -281,7 +282,7 @@ public class ApkUpdaterPlugin extends Plugin {
             }
         }, "zevon-apk-update");
 
-        try {
+            }, "zevon-apk-update");
             worker.start();
         } catch (RuntimeException e) {
             ApkUpdatePolicy.releaseDownload(DOWNLOAD_IN_PROGRESS);
