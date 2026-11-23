@@ -1,11 +1,19 @@
 package com.zevon.mobility.updater;
 
+import java.net.URL;
+import java.util.Arrays;
+import java.util.HashSet;
 import java.util.Locale;
+import java.util.Set;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 /** Pure validation policy for the interactive APK updater. */
 final class ApkUpdatePolicy {
+    static final long MAX_APK_BYTES = 100L * 1024L * 1024L;
+    static final int MAX_REDIRECTS = 5;
+
     private static final String VERSION = "(0|[1-9][0-9]*)\\.(0|[1-9][0-9]*)\\.(0|[1-9][0-9]*)";
     private static final Pattern OFFICIAL_URL = Pattern.compile(
         "^https://github\\.com/Vimlesh1996/zevonmobility/releases/download/v(" + VERSION +
@@ -14,6 +22,12 @@ final class ApkUpdatePolicy {
     private static final Pattern OFFICIAL_FILE = Pattern.compile(
         "^ZEVON-Mobility-v" + VERSION + "\\.apk$"
     );
+    private static final Set<String> TRUSTED_DOWNLOAD_HOSTS = new HashSet<>(Arrays.asList(
+        "github.com",
+        "objects.githubusercontent.com",
+        "release-assets.githubusercontent.com",
+        "githubusercontent.com"
+    ));
 
     private ApkUpdatePolicy() {}
 
@@ -26,6 +40,53 @@ final class ApkUpdatePolicy {
         Matcher match = OFFICIAL_URL.matcher(url);
         if (!match.matches() || !url.endsWith("/" + fileName)) return false;
         return match.group(1).equals(match.group(5));
+    }
+
+    /**
+     * Redirects are restricted to exact HTTPS GitHub release hosts. No suffix or
+     * wildcard matching is used, and non-default ports/user-info are rejected.
+     */
+    static boolean isTrustedDownloadUrl(String value) {
+        if (value == null || value.trim().isEmpty()) return false;
+        try {
+            URL url = new URL(value);
+            String host = url.getHost() == null ? "" : url.getHost().toLowerCase(Locale.ROOT);
+            return "https".equalsIgnoreCase(url.getProtocol()) &&
+                (url.getPort() == -1 || url.getPort() == 443) &&
+                url.getUserInfo() == null &&
+                TRUSTED_DOWNLOAD_HOSTS.contains(host);
+        } catch (Exception ignored) {
+            return false;
+        }
+    }
+
+    static boolean isRedirectStatus(int status) {
+        return status == 301 || status == 302 || status == 303 || status == 307 || status == 308;
+    }
+
+    static URL resolveTrustedRedirect(URL current, String location) throws Exception {
+        if (current == null || location == null || location.trim().isEmpty()) {
+            throw new SecurityException("The APK server returned an invalid redirect.");
+        }
+        URL next = new URL(current, location.trim());
+        if (!isTrustedDownloadUrl(next.toExternalForm())) {
+            throw new SecurityException("APK redirect target is not an approved HTTPS GitHub host.");
+        }
+        return next;
+    }
+
+    static boolean canAppendBytes(long totalBytesRead, long incomingBytes) {
+        return totalBytesRead >= 0 && incomingBytes >= 0 &&
+            totalBytesRead <= MAX_APK_BYTES &&
+            incomingBytes <= MAX_APK_BYTES - totalBytesRead;
+    }
+
+    static boolean tryAcquireDownload(AtomicBoolean inProgress) {
+        return inProgress != null && inProgress.compareAndSet(false, true);
+    }
+
+    static void releaseDownload(AtomicBoolean inProgress) {
+        if (inProgress != null) inProgress.set(false);
     }
 
     static boolean isExpectedPackage(String actualPackage, String expectedPackage) {
