@@ -1,0 +1,38 @@
+name: ZEVON Main Branch Governance
+
+on:
+  pull_request:
+    branches:
+      - main
+      - feature/customer-app-rebuild
+  push:
+    branches:
+      - main
+      - feature/customer-app-rebuild
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: main-governance-${{ github.ref }}-${{ github.event.pull_request.number || github.run_id }}
+  cancel-in-progress: true
+
+jobs:
+  main-governance:
+    name: Main branch governance
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout exact commit
+        uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
+
+      - name: Set up Go for actionlint
+        uses: actions/setup-go@40f1582b2485089dde7abd97c1529aa768e1baff # v5
+        with:
+          go-version: '1.25'
+
+      - name: Validate all GitHub Actions workflows
+        run: go run github.com/rhysd/actionlint/cmd/actionlint@v1.7.7 .github/workflows/*.yml
+
+      - name: Validate production website deployment boundary
+        run: python3 .github/scripts/check-production-deployment-boundary.py
