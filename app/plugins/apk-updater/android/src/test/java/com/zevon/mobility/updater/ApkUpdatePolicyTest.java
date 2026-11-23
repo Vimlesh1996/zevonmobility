@@ -43,7 +43,6 @@ public class ApkUpdatePolicyTest {
         assertTrue(ApkUpdatePolicy.isTrustedDownloadUrl("https://github.com/releases/download/file.apk"));
         assertTrue(ApkUpdatePolicy.isTrustedDownloadUrl("https://objects.githubusercontent.com/assets/file"));
         assertTrue(ApkUpdatePolicy.isTrustedDownloadUrl("https://release-assets.githubusercontent.com/assets/file"));
-        assertTrue(ApkUpdatePolicy.isTrustedDownloadUrl("https://githubusercontent.com/assets/file"));
         assertTrue(ApkUpdatePolicy.isTrustedDownloadUrl("https://release-assets.githubusercontent.com:443/assets/file"));
 
         assertFalse(ApkUpdatePolicy.isTrustedDownloadUrl("http://release-assets.githubusercontent.com/assets/file"));
@@ -52,6 +51,7 @@ public class ApkUpdatePolicyTest {
         assertFalse(ApkUpdatePolicy.isTrustedDownloadUrl("https://release-assets.githubusercontent.com:8443/file"));
         assertFalse(ApkUpdatePolicy.isTrustedDownloadUrl("https://github.com@evil.test/file"));
         assertFalse(ApkUpdatePolicy.isTrustedDownloadUrl("https://evil.test/file"));
+        assertFalse(ApkUpdatePolicy.isTrustedDownloadUrl("https://githubusercontent.com/assets/file"));
         assertFalse(ApkUpdatePolicy.isTrustedDownloadUrl(null));
     }
 
