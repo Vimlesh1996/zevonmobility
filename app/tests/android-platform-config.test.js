@@ -63,3 +63,15 @@ test('Android platform config fails closed if the expected FileProvider is missi
   }finally{fs.rmSync(root,{recursive:true,force:true});}
  }
 });
+
+const nativeUpdater=fs.readFileSync(path.join(appRoot,'plugins/apk-updater/android/src/main/java/com/zevon/mobility/updater/ApkUpdaterPlugin.java'),'utf8');
+
+test('native updater shares only the dedicated cache file and reports installer handoff without claiming install completion',()=>{
+ assert.match(nativeUpdater,/new File\(getContext\(\)\.getCacheDir\(\), "apk-updates"\)/);
+ assert.match(nativeUpdater,/getCanonicalFile\(\)\.getParentFile\(\)/);
+ assert.match(nativeUpdater,/ClipData\.newUri/);
+ assert.match(nativeUpdater,/Intent\.ACTION_VIEW/);
+ assert.match(nativeUpdater,/response\.put\("installerLaunched", true\)/);
+ assert.doesNotMatch(nativeUpdater,/response\.put\("installed", true\)/);
+ assert.match(nativeUpdater,/Settings\.ACTION_MANAGE_UNKNOWN_APP_SOURCES/);
+});
