@@ -142,10 +142,7 @@ public class ApkUpdaterPlugin extends Plugin {
                 int status = current.getResponseCode();
                 if (ApkUpdatePolicy.isRedirectStatus(status)) {
                     String location = current.getHeaderField("Location");
-                    if (redirectCount >= ApkUpdatePolicy.MAX_REDIRECTS) {
-                        throw new SecurityException("APK download exceeded the maximum redirect count.");
-                    }
-                    URL next = ApkUpdatePolicy.resolveTrustedRedirect(target, location);
+                    URL next = ApkUpdatePolicy.resolveTrustedRedirect(target, location, redirectCount);
                     current.disconnect();
                     target = next;
                     continue;
@@ -225,19 +222,8 @@ public class ApkUpdaterPlugin extends Plugin {
                 }
 
                 out = new File(getContext().getCacheDir(), safeName);
-                try (InputStream in = new BufferedInputStream(connection.getInputStream());
-                     FileOutputStream fos = new FileOutputStream(out)) {
-                    byte[] buffer = new byte[8192];
-                    int count;
-                    long totalBytesRead = 0L;
-                    while ((count = in.read(buffer)) != -1) {
-                        if (!ApkUpdatePolicy.canAppendBytes(totalBytesRead, count)) {
-                            throw new SecurityException("APK exceeds the maximum permitted download size.");
-                        }
-                        totalBytesRead += count;
-                        fos.write(buffer, 0, count);
-                    }
-                    fos.getFD().sync();
+                try (InputStream in = new BufferedInputStream(connection.getInputStream())) {
+                    ApkUpdatePolicy.copyBoundedToFile(in, out, ApkUpdatePolicy.MAX_APK_BYTES);
                 }
                 if (out.length() < 1024 * 1024) throw new IOException("Downloaded APK is unexpectedly small.");
 
