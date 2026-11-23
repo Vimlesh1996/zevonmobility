@@ -102,9 +102,11 @@ jobs:
           VERSION="$(node -p "require('./package.json').version")"
           VERSION_CODE="$(node -e "const c=require('./www/update-manifest.js');process.stdout.write(String(c.versionCode(process.argv[1])))" "$VERSION")"
           test "$VERSION_CODE" -gt 0
-          echo "version=$VERSION" >> "$GITHUB_OUTPUT"
-          echo "version_code=$VERSION_CODE" >> "$GITHUB_OUTPUT"
-          echo "tag=v$VERSION" >> "$GITHUB_OUTPUT"
+          {
+            echo "version=$VERSION"
+            echo "version_code=$VERSION_CODE"
+            echo "tag=v$VERSION"
+          } >> "$GITHUB_OUTPUT"
 
       - name: Configure app version metadata and signing
         env:
