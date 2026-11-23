@@ -309,3 +309,15 @@ Work in this order. Keep each PR narrowly scoped and based on a freshly checked 
 - Updated PR #19 head: `3af87846a87d767b27ae02783a6ac8b04c69e81d`. New Android CI run [#45164817463](https://github.com/Vimlesh1996/zevonmobility/actions/runs/45164817463) was queued for this exact head. The earlier green run does not satisfy the latest-head gate.
 - PR #19 remains draft/unmerged. Share final diff/changed-files links for Gemini's line-by-line audit only after run #45164817463 completes successfully.
 - FCM remains disabled: no Firebase/Push Notifications dependency or runtime POST_NOTIFICATIONS prompt has been introduced; the permission is declaration-only for readiness.
+
+
+### 2026-11-23 — PR-D final approval, CI success, and merge
+
+- **Gemini final review:** APPROVED FOR MERGE on exact head 3af87846a87d767b27ae02783a6ac8b04c69e81d, contingent on CI success and Project Owner authorization. Audit covered all 8 changed files, fail-closed FileProvider configuration, dedicated private cache and canonical-parent enforcement, ClipData/read-URI grant, debug/signed-release parity, and confirmation that FCM runtime prompts/nudges remain disabled.
+- **CI gate:** Android CI run [#45164817463](https://github.com/Vimlesh1996/zevonmobility/actions/runs/45164817463) completed with conclusion success on the exact reviewed head 3af87846a87d767b27ae02783a6ac8b04c69e81d. Successful job: Build Android debug APK. Artifacts generated and available: zevon-mobility-debug-apk and zevon-android-platform-manifest.
+- **Project Owner authorization:** Explicit contingent approval received; condition was satisfied by the successful latest-head CI run.
+- **PR:** [#19](https://github.com/Vimlesh1996/zevonmobility/pull/19) was marked ready for review and squash-merged into feature/customer-app-rebuild only.
+- **Merge commit:** 6ee499a53b7fa6c8c7a77507957599271700fbca.
+- **Safety boundary:** No merge to main, no production release/tag, no website deployment, no Firebase configuration change, and no signing-key operation was performed. FCM runtime prompts and nudges remain disabled; POST_NOTIFICATIONS is declaration-only.
+- **Remaining validation:** Physical-device verification remains mandatory for Android 12, 13 and 14/15, including FileProvider URI resolution, unknown-app-source settings return, installer handoff, displayed package/version, explicit confirmation, and successful install-over. Production release gates remain separate.
+- **Next scope:** PR-E begins on an isolated branch: repository governance for main (branch protection/required checks) and production website deployment path isolation/guards. If repository administration APIs are unavailable, record exact owner-facing GitHub settings steps; do not weaken existing settings or deploy production.
