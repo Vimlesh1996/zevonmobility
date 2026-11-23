@@ -54,3 +54,10 @@ Do not reuse tags or versionCodes. The version-code formula is `MAJOR × 1,000,0
 - Do not merge the experimental FCM background-download branch into the v1.0.9 release.
 - Do not change production Apps Script, Google Sheets, website Pages settings or DNS as part of APK release work.
 - Android user confirmation remains required.
+
+
+## PR-D platform integration note
+
+The app's generated Capacitor FileProvider must be configured by running `python3 scripts/configure-android-platform.py` after `npx cap add android`. This limits shareable files to `cache/apk-updates/` and declares `POST_NOTIFICATIONS` for Android 13+ readiness. The permission declaration does not grant notification access or request it at runtime. Keep FCM nudges disabled until a reviewed push-permission flow and physical-device tests pass.
+
+The updater checks `canRequestPackageInstalls()` on Android 8+ and can open the per-app unknown-app-sources settings page. This permission is separate from `POST_NOTIFICATIONS`; test both settings return behavior and installer handoff on supported physical devices.
