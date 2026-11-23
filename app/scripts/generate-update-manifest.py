@@ -9,7 +9,7 @@ from pathlib import Path
 
 PACKAGE = "com.zevon.mobility"
 REPOSITORY = "Vimlesh1996/zevonmobility"
-VERSION_RE = re.compile(r"^v(0|[1-9][0-9]*)\\.(0|[1-9][0-9]*)\\.(0|[1-9][0-9]*)$")
+VERSION_RE = re.compile(r"^v(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)\\.(0|[1-9][0-9]*)$")
 
 
 def version_code(version_tag):
