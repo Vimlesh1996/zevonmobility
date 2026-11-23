@@ -138,7 +138,7 @@ jobs:
           python3 - <<'PY'
           import os, re
           tag = os.environ["RELEASE_TAG"]
-          match = re.fullmatch(r"v(0|[1-9]\\d*)\\.(0|[1-9]\\d*)\\.(0|[1-9]\\d*)", tag)
+          match = re.fullmatch(r"v(0|[1-9]\d*)\\.(0|[1-9]\d*)\\.(0|[1-9]\d*)", tag)
           if not match:
               raise SystemExit("Version must use vMAJOR.MINOR.PATCH without leading zeroes")
           major, minor, patch = map(int, match.groups())
