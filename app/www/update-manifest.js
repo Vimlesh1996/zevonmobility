@@ -6,7 +6,7 @@
 })(typeof window!=='undefined'?window:globalThis,function(){
   const PACKAGE_NAME='com.zevon.mobility';
   const REPOSITORY='Vimlesh1996/zevonmobility';
-  const VERSION=/^(0|[1-9][0-9]*)\\.(0|[1-9][0-9]*)\\.(0|[1-9][0-9]*)$/;
+  const VERSION=/^(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)$/;
   function versionCode(version){
     const m=String(version||'').match(VERSION);
     if(!m)return 0;
