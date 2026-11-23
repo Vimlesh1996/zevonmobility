@@ -138,7 +138,7 @@ jobs:
           python3 - <<'PY'
           import os, re
           tag = os.environ["RELEASE_TAG"]
-          match = re.fullmatch(r"v(0|[1-9]\d*)\\.(0|[1-9]\d*)\\.(0|[1-9]\d*)", tag)
+          match = re.fullmatch(r"v(0|[1-9]\d*)\.(0|[1-9]\d*)\.(0|[1-9]\d*)", tag)
           if not match:
               raise SystemExit("Version must use vMAJOR.MINOR.PATCH without leading zeroes")
           major, minor, patch = map(int, match.groups())
@@ -232,7 +232,7 @@ jobs:
               "signerSha256": os.environ["EXPECTED_CERT"],
               "productionReleaseCreated": False
           }
-          Path("test-build-metadata.json").write_text(json.dumps(metadata, indent=2) + "\\n")
+          Path("test-build-metadata.json").write_text(json.dumps(metadata, indent=2) + "\n")
           PY
           echo "APK package, version, versionCode, SHA-256 and signing identity verified."
 
@@ -242,11 +242,11 @@ jobs:
           RELEASE_TAG: ${{ steps.build-inputs.outputs.release_tag }}
         run: |
           set -euo pipefail
-          python3 scripts/generate-update-manifest.py \\
-            --apk "ZEVON-Mobility-${RELEASE_TAG}.apk" \\
-            --tag "$RELEASE_TAG" \\
-            --output update.json \\
-            --aapt "$ANDROID_HOME/build-tools/35.0.0/aapt" \\
+          python3 scripts/generate-update-manifest.py \
+            --apk "ZEVON-Mobility-${RELEASE_TAG}.apk" \
+            --tag "$RELEASE_TAG" \
+            --output update.json \
+            --aapt "$ANDROID_HOME/build-tools/35.0.0/aapt" \
             --apksigner "$ANDROID_HOME/build-tools/35.0.0/apksigner"
 
       - name: Upload controlled test APK artifact
@@ -275,7 +275,7 @@ jobs:
             echo "::error::Release $RELEASE_TAG already exists. Refusing to replace assets."
             exit 1
           fi
-          gh release create "$RELEASE_TAG" "$APK_FILE" "$CHECKSUM_FILE" update.json \\
+          gh release create "$RELEASE_TAG" "$APK_FILE" "$CHECKSUM_FILE" update.json \
             --title "ZEVON Mobility $RELEASE_TAG" --generate-notes
 
       - name: Remove temporary signing material
