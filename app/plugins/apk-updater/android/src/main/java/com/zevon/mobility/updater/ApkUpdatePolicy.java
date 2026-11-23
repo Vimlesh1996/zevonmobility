@@ -98,7 +98,7 @@ final class ApkUpdatePolicy {
             byte[] buffer = new byte[8192];
             int count;
             while ((count = in.read(buffer)) != -1) {
-                if (totalBytesRead > maxBytes || count > maxBytes - totalBytesRead) {
+                if (!canAppendBytes(totalBytesRead, count, maxBytes)) {
                     throw new SecurityException("APK exceeds the maximum permitted download size.");
                 }
                 totalBytesRead += count;
@@ -113,9 +113,12 @@ final class ApkUpdatePolicy {
     }
 
     static boolean canAppendBytes(long totalBytesRead, long incomingBytes) {
-        return totalBytesRead >= 0 && incomingBytes >= 0 &&
-            totalBytesRead <= MAX_APK_BYTES &&
-            incomingBytes <= MAX_APK_BYTES - totalBytesRead;
+        return canAppendBytes(totalBytesRead, incomingBytes, MAX_APK_BYTES);
+    }
+
+    static boolean canAppendBytes(long totalBytesRead, long incomingBytes, long maxBytes) {
+        return maxBytes >= 0 && totalBytesRead >= 0 && incomingBytes >= 0 &&
+            totalBytesRead <= maxBytes && incomingBytes <= maxBytes - totalBytesRead;
     }
 
     static boolean tryAcquireDownload(AtomicBoolean inProgress) {
