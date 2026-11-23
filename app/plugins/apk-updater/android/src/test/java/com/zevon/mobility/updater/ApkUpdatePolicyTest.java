@@ -204,6 +204,20 @@ public class ApkUpdatePolicyTest {
     }
 
     @Test
+    public void alignsManifestVersionAndVersionCodeWithStrictSemanticVersioning() {
+        assertEquals(1000009L, ApkUpdatePolicy.versionCodeFor("1.0.9"));
+        assertEquals(2003004L, ApkUpdatePolicy.versionCodeFor("2.3.4"));
+        assertTrue(ApkUpdatePolicy.isMatchingVersion("1.0.9", 1000009L));
+        assertFalse(ApkUpdatePolicy.isMatchingVersion("1.0.9", 1000008L));
+        assertEquals(0L, ApkUpdatePolicy.versionCodeFor("01.0.9"));
+        assertEquals(0L, ApkUpdatePolicy.versionCodeFor("1.1000.0"));
+        assertEquals(0L, ApkUpdatePolicy.versionCodeFor("1.0.1000"));
+        assertEquals(0L, ApkUpdatePolicy.versionCodeFor("2148.0.0"));
+        assertFalse(ApkUpdatePolicy.isOfficialReleaseUrl(URL_VALUE, APK, "1.0.8"));
+        assertTrue(ApkUpdatePolicy.isOfficialReleaseUrl(URL_VALUE, APK, "1.0.9"));
+    }
+
+    @Test
     public void requiresManifestVersionToMatchAndAdvanceInstalledVersion() {
         assertTrue(ApkUpdatePolicy.isNewerExpectedVersion(1000009, 1000009, 1000008));
         assertFalse(ApkUpdatePolicy.isNewerExpectedVersion(1000008, 1000009, 1000008));
