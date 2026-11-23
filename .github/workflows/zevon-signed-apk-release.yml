@@ -5,93 +5,113 @@ on:
     tags:
       - 'v*.*.*'
 
+# The workflow is read-only by default. Only the gated release job can publish assets.
 permissions:
-  contents: write
+  contents: read
+
+concurrency:
+  group: zevon-production-release-${{ github.ref }}
+  cancel-in-progress: false
 
 jobs:
   signed-release:
     name: Build and publish signed APK
     runs-on: ubuntu-latest
+    timeout-minutes: 45
+    environment:
+      name: zevon-production-release
+    permissions:
+      contents: write
     defaults:
       run:
         working-directory: app
     steps:
       - name: Checkout
-        uses: actions/checkout@v5
+        uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
 
       - name: Set up Node
-        uses: actions/setup-node@v5
+        uses: actions/setup-node@a0853c24544627f65ddf259abe73b1d18a591444 # v5
         with:
           node-version: 22
+          cache: npm
+          cache-dependency-path: app/package-lock.json
 
       - name: Set up Java
-        uses: actions/setup-java@v5
+        uses: actions/setup-java@b6effb05e454b25005698d916606bdc6ffcbf961 # v5
         with:
           distribution: temurin
           java-version: '21'
 
-      - name: Validate signing secrets
-        env:
-          KEYSTORE_B64: ${{ secrets.ANDROID_KEYSTORE_BASE64 }}
-          KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
-          STORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
-          KEY_PASSWORD: ${{ secrets.ANDROID_KEY_PASSWORD }}
-        run: |
-          test -n "$KEYSTORE_B64" || (echo "::error::Missing ANDROID_KEYSTORE_BASE64 secret" && exit 1)
-          test -n "$KEY_ALIAS" || (echo "::error::Missing ANDROID_KEY_ALIAS secret" && exit 1)
-          test -n "$STORE_PASSWORD" || (echo "::error::Missing ANDROID_KEYSTORE_PASSWORD secret" && exit 1)
-          test -n "$KEY_PASSWORD" || (echo "::error::Missing ANDROID_KEY_PASSWORD secret" && exit 1)
+      - name: Set up Android SDK
+        uses: android-actions/setup-android@9fc6c4e9069bf8d3d10b2204b1fb8f6ef7065407 # v3
+        with:
+          packages: 'platform-tools platforms;android-35 build-tools;35.0.0'
 
-      - name: Decode private release keystore
-        env:
-          KEYSTORE_B64: ${{ secrets.ANDROID_KEYSTORE_BASE64 }}
+      - name: Install locked dependencies and run tests
         run: |
-          echo "$KEYSTORE_B64" | base64 --decode > zevon-release.keystore
-          chmod 600 zevon-release.keystore
-
-      - name: Install dependencies and run tests
-        run: |
-          npm install --no-package-lock
+          npm ci
           npm run lint
           npm test
 
       - name: Generate Android project
         run: npx cap add android
 
-      - name: Configure version and release signing
+      # This is deliberately one step: the decoded private keystore is removed by
+      # the EXIT trap whether validation, build, manifest generation, or publishing fails.
+      # The production environment must be configured with required reviewers in GitHub Settings.
+      - name: Build, validate, and publish signed release
+        shell: bash
         env:
+          KEYSTORE_B64: ${{ secrets.ANDROID_KEYSTORE_BASE64 }}
           KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
           STORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
           KEY_PASSWORD: ${{ secrets.ANDROID_KEY_PASSWORD }}
           RELEASE_TAG: ${{ github.ref_name }}
-        run: python3 scripts/configure-android-release.py
-
-      - name: Sync and build signed release APK
+          GH_TOKEN: ${{ github.token }}
         run: |
+          set -Eeuo pipefail
+          umask 077
+
+          cleanup() {
+            rm -f -- zevon-release.keystore
+          }
+          trap cleanup EXIT
+
+          test -n "$KEYSTORE_B64" || { echo "::error::Missing ANDROID_KEYSTORE_BASE64 secret"; exit 1; }
+          test -n "$KEY_ALIAS" || { echo "::error::Missing ANDROID_KEY_ALIAS secret"; exit 1; }
+          test -n "$STORE_PASSWORD" || { echo "::error::Missing ANDROID_KEYSTORE_PASSWORD secret"; exit 1; }
+          test -n "$KEY_PASSWORD" || { echo "::error::Missing ANDROID_KEY_PASSWORD secret"; exit 1; }
+
+          printf '%s' "$KEYSTORE_B64" | base64 --decode > zevon-release.keystore
+          chmod 600 zevon-release.keystore
+
+          export KEY_ALIAS STORE_PASSWORD KEY_PASSWORD RELEASE_TAG
+          python3 scripts/configure-android-release.py
+
           npx cap sync android
           cd android
           chmod +x gradlew
-          ./gradlew assembleRelease
+          ./gradlew assembleRelease --no-daemon
           cd ..
-          cp android/app/build/outputs/apk/release/app-release.apk "ZEVON-Mobility-${GITHUB_REF_NAME}.apk"
-          sha256sum "ZEVON-Mobility-${GITHUB_REF_NAME}.apk" > "ZEVON-Mobility-${GITHUB_REF_NAME}.apk.sha256"
+
+          APK="ZEVON-Mobility-${RELEASE_TAG}.apk"
+          CHECKSUM="${APK}.sha256"
+          cp android/app/build/outputs/apk/release/app-release.apk "$APK"
+          sha256sum "$APK" > "$CHECKSUM"
+
           AAPT="$ANDROID_HOME/build-tools/35.0.0/aapt"
           APKSIGNER="$ANDROID_HOME/build-tools/35.0.0/apksigner"
-          "$APKSIGNER" verify --verbose "ZEVON-Mobility-${GITHUB_REF_NAME}.apk"
+          "$APKSIGNER" verify --verbose "$APK"
           python3 scripts/generate-update-manifest.py \
-            --apk "ZEVON-Mobility-${GITHUB_REF_NAME}.apk" \
-            --tag "${GITHUB_REF_NAME}" \
+            --apk "$APK" \
+            --tag "$RELEASE_TAG" \
             --output update.json \
             --aapt "$AAPT" \
             --apksigner "$APKSIGNER"
 
-      - name: Publish GitHub Release for in-app updater
-        env:
-          GH_TOKEN: ${{ github.token }}
-        run: |
-          gh release create "${GITHUB_REF_NAME}" \
-            "ZEVON-Mobility-${GITHUB_REF_NAME}.apk" \
-            "ZEVON-Mobility-${GITHUB_REF_NAME}.apk.sha256" \
-            "update.json" \
-            --title "ZEVON Mobility ${GITHUB_REF_NAME}" \
+          gh release create "$RELEASE_TAG" \
+            "$APK" \
+            "$CHECKSUM" \
+            update.json \
+            --title "ZEVON Mobility $RELEASE_TAG" \
             --generate-notes

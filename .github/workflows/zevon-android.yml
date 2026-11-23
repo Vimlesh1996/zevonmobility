@@ -10,6 +10,7 @@ on:
     paths:
       - 'app/**'
       - '.github/workflows/zevon-android.yml'
+      - '.github/workflows/zevon-signed-apk-release.yml'
   push:
     branches:
       - zevon-app-v1
