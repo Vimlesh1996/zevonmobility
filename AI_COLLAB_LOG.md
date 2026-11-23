@@ -300,3 +300,12 @@ Work in this order. Keep each PR narrowly scoped and based on a freshly checked 
 - **Remaining risks / follow-ups:** Validate the exact merged manifest and resource XML from CI. Test FileProvider URI resolution, unknown-app-source permission return, installer UI and explicit confirmation on physical Android 12, 13 and 14/15 devices. A runtime notification permission request and FCM activation are deliberately not part of this PR. No production release, Firebase configuration, signing key, website deployment or `main` change occurred.
 
 - **PR-D CI update:** Android CI run [#45164494826](https://github.com/Vimlesh1996/zevonmobility/actions/runs/45164494826) started on current PR head `879375633e352203ff296c76cbe734c8bf49c46e`. At the latest check, setup/checkout/toolchain steps had passed and dependency installation was in progress; no CI success claim is made. The workflow includes merged-manifest verification and evidence artifact upload after the build.
+
+### PR-D follow-up — CI passed on initial head; signed-release parity fix queued
+
+- Android CI run [#45164494826](https://github.com/Vimlesh1996/zevonmobility/actions/runs/45164494826) completed `success` on initial PR-D head `879375633e352203ff296c76cbe734c8bf49c46e`. It passed tests, Android build, merged debug manifest verification and audit artifact upload.
+- Gemini's requested workflow parity review exposed a gap: the signed production release workflow generated Android but did not run the new FileProvider/POST_NOTIFICATIONS configuration step. This would have left signed builds using the broad Capacitor default FileProvider paths.
+- Fixed `.github/workflows/zevon-signed-apk-release.yml` on the PR-D branch: it now runs `python3 scripts/configure-android-platform.py` immediately after `npx cap add android`, and verifies the merged **release** manifest and restricted source paths after `assembleRelease`.
+- Updated PR #19 head: `3af87846a87d767b27ae02783a6ac8b04c69e81d`. New Android CI run [#45164817463](https://github.com/Vimlesh1996/zevonmobility/actions/runs/45164817463) was queued for this exact head. The earlier green run does not satisfy the latest-head gate.
+- PR #19 remains draft/unmerged. Share final diff/changed-files links for Gemini's line-by-line audit only after run #45164817463 completes successfully.
+- FCM remains disabled: no Firebase/Push Notifications dependency or runtime POST_NOTIFICATIONS prompt has been introduced; the permission is declaration-only for readiness.
