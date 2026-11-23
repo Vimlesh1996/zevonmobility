@@ -8,12 +8,13 @@ on:
       - '.github/workflows/zevon-signed-apk-release.yml'
   workflow_dispatch:
     inputs:
-      release_tag:
-        description: "Existing customer-app release tag to build (for example v1.0.9)"
+      test_version:
+        description: "Test APK version (must be higher than the installed baseline, e.g. 1.0.9)"
         required: true
+        default: "1.0.9"
         type: string
       dry_run:
-        description: "Build and verify only; do not create a GitHub Release"
+        description: "Required safety switch: build and upload an Actions artifact only; never publish a Release"
         required: true
         default: true
         type: boolean
@@ -22,10 +23,10 @@ on:
       - 'v*.*.*'
 
 permissions:
-  contents: write
+  contents: read
 
 concurrency:
-  group: zevon-release-${{ inputs.release_tag || github.ref_name }}
+  group: zevon-signed-apk-${{ github.event_name == 'workflow_dispatch' && inputs.test_version || github.ref }}
   cancel-in-progress: false
 
 jobs:
@@ -43,40 +44,65 @@ jobs:
     if: github.event_name != 'pull_request'
     name: Build and verify signed APK
     runs-on: ubuntu-latest
+    timeout-minutes: 45
+    environment:
+      name: zevon-production-release
+    permissions:
+      contents: write
     defaults:
       run:
         working-directory: app
     steps:
-      - name: Checkout exact release-tag commit
+      - name: Checkout customer app source
         uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
         with:
-          ref: ${{ inputs.release_tag || github.sha }}
+          ref: ${{ github.event_name == 'workflow_dispatch' && 'feature/customer-app-rebuild' || github.ref }}
           fetch-depth: 0
 
-      - name: Verify tag and source provenance
+      - name: Verify source provenance and choose build version
+        id: build-inputs
         env:
-          RELEASE_TAG: ${{ inputs.release_tag || github.ref_name }}
+          EVENT_NAME: ${{ github.event_name }}
+          TEST_VERSION: ${{ inputs.test_version }}
+          REF_NAME: ${{ github.ref_name }}
         run: |
           set -euo pipefail
           git fetch origin feature/customer-app-rebuild:refs/remotes/origin/feature/customer-app-rebuild
-          TAG_COMMIT="$(git rev-parse "${RELEASE_TAG}^{commit}")"
           CHECKED_OUT_COMMIT="$(git rev-parse HEAD)"
-          if [ "$TAG_COMMIT" != "$CHECKED_OUT_COMMIT" ]; then
-            echo "::error::Checkout does not match the requested release tag commit."
-            exit 1
-          fi
-          if ! git merge-base --is-ancestor "$TAG_COMMIT" origin/feature/customer-app-rebuild; then
-            echo "::error::The tagged commit is not part of feature/customer-app-rebuild."
-            exit 1
+          if [ "$EVENT_NAME" = "workflow_dispatch" ]; then
+            FEATURE_HEAD="$(git rev-parse refs/remotes/origin/feature/customer-app-rebuild)"
+            if [ "$CHECKED_OUT_COMMIT" != "$FEATURE_HEAD" ]; then
+              echo "::error::Dry-run checkout must match the current feature/customer-app-rebuild head."
+              exit 1
+            fi
+            if [ "${{ inputs.dry_run }}" != "true" ]; then
+              echo "::error::This manual workflow is artifact-only. dry_run must remain true."
+              exit 1
+            fi
+            RELEASE_TAG="v$TEST_VERSION"
+          else
+            RELEASE_TAG="$REF_NAME"
+            TAG_COMMIT="$(git rev-parse "${RELEASE_TAG}^{commit}")"
+            if [ "$TAG_COMMIT" != "$CHECKED_OUT_COMMIT" ]; then
+              echo "::error::Checkout does not match the pushed release tag."
+              exit 1
+            fi
+            if ! git merge-base --is-ancestor "$TAG_COMMIT" refs/remotes/origin/feature/customer-app-rebuild; then
+              echo "::error::The tagged commit is not part of feature/customer-app-rebuild."
+              exit 1
+            fi
           fi
           test -f package.json
           test -f www/index.html
-          echo "Verified tag $RELEASE_TAG at customer-app commit $TAG_COMMIT"
+          echo "release_tag=$RELEASE_TAG" >> "$GITHUB_OUTPUT"
+          echo "Verified source commit $CHECKED_OUT_COMMIT for $RELEASE_TAG"
 
       - name: Set up Node
         uses: actions/setup-node@a0853c24544627f65ddf259abe73b1d18a591444 # v5
         with:
           node-version: 22
+          cache: npm
+          cache-dependency-path: app/package-lock.json
 
       - name: Set up Java
         uses: actions/setup-java@b6effb05e454b25005698d916606bdc6ffcbf961 # v5
@@ -84,33 +110,45 @@ jobs:
           distribution: temurin
           java-version: '21'
 
-      - name: Validate release tag and signing secrets
+      - name: Set up Android SDK
+        uses: android-actions/setup-android@9fc6c4e9069bf8d3d10b2204b1fb8f6ef7065407 # v3
+        with:
+          packages: 'platform-tools platforms;android-35 build-tools;35.0.0'
+
+      - name: Validate all four environment signing secrets
         env:
           KEYSTORE_B64: ${{ secrets.ANDROID_KEYSTORE_BASE64 }}
           KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
           STORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
-          RELEASE_TAG: ${{ inputs.release_tag || github.ref_name }}
+          KEY_PASSWORD: ${{ secrets.ANDROID_KEY_PASSWORD }}
         run: |
+          set -euo pipefail
+          for name in KEYSTORE_B64 KEY_ALIAS STORE_PASSWORD KEY_PASSWORD; do
+            if [ -z "${!name:-}" ]; then
+              echo "::error::Missing required zevon-production-release secret mapped to $name"
+              exit 1
+            fi
+          done
+
+      - name: Validate version and install locked dependencies
+        env:
+          RELEASE_TAG: ${{ steps.build-inputs.outputs.release_tag }}
+        run: |
+          set -euo pipefail
           python3 - <<'PY'
           import os, re
           tag = os.environ["RELEASE_TAG"]
-          match = re.fullmatch(r"v(0|[1-9]\d*)\.(0|[1-9]\d*)\.(0|[1-9]\d*)", tag)
+          match = re.fullmatch(r"v(0|[1-9]\\d*)\\.(0|[1-9]\\d*)\\.(0|[1-9]\\d*)", tag)
           if not match:
-              raise SystemExit("Release tag must use vMAJOR.MINOR.PATCH without leading zeroes")
+              raise SystemExit("Version must use vMAJOR.MINOR.PATCH without leading zeroes")
           major, minor, patch = map(int, match.groups())
           if minor > 999 or patch > 999:
               raise SystemExit("MINOR and PATCH must be between 0 and 999")
           code = major * 1000000 + minor * 1000 + patch
           if code < 1 or code > 2147483647:
               raise SystemExit("Calculated Android versionCode is outside the supported range")
-          for key in ("KEYSTORE_B64", "KEY_ALIAS", "STORE_PASSWORD"):
-              if not os.environ.get(key):
-                  raise SystemExit("Missing required signing configuration: " + key)
-          print(f"Release tag valid; Android versionCode will be {code}")
+          print(f"Validated {tag}; Android versionCode={code}")
           PY
-
-      - name: Install dependencies and run tests
-        run: |
           npm ci
           npm run lint
           npm test
@@ -118,47 +156,36 @@ jobs:
       - name: Generate Android project
         run: npx cap add android
 
-      - name: Disable Android cloud backup for local enquiry data
-        run: |
-          python3 - <<'PY'
-          import re
-          from pathlib import Path
-          manifest = Path("android/app/src/main/AndroidManifest.xml")
-          source = manifest.read_text()
-          source, count = re.subn(
-              r'android:allowBackup="(?:true|false)"',
-              'android:allowBackup="false"',
-              source,
-              count=1
-          )
-          if count != 1:
-              raise SystemExit("Could not set android:allowBackup=false in generated manifest")
-          manifest.write_text(source)
-          PY
+      - name: Configure Android platform integration
+        run: python3 scripts/configure-android-platform.py
 
-      - name: Decode private release keystore
+      - name: Decode existing production signing keystore
         env:
           KEYSTORE_B64: ${{ secrets.ANDROID_KEYSTORE_BASE64 }}
         run: |
+          set -euo pipefail
           umask 077
           printf '%s' "$KEYSTORE_B64" | base64 --decode > zevon-release.keystore
+          chmod 600 zevon-release.keystore
           test -s zevon-release.keystore
 
       - name: Configure version and release signing
         env:
           KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
           STORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
-          RELEASE_TAG: ${{ inputs.release_tag || github.ref_name }}
+          KEY_PASSWORD: ${{ secrets.ANDROID_KEY_PASSWORD }}
+          RELEASE_TAG: ${{ steps.build-inputs.outputs.release_tag }}
         run: python3 scripts/configure-android-release.py
 
       - name: Sync and build signed release APK
         env:
           KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
           STORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
-          KEY_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
-          RELEASE_TAG: ${{ inputs.release_tag || github.ref_name }}
+          KEY_PASSWORD: ${{ secrets.ANDROID_KEY_PASSWORD }}
+          RELEASE_TAG: ${{ steps.build-inputs.outputs.release_tag }}
         run: |
           set -euo pipefail
+          trap 'rm -f zevon-release.keystore' EXIT
           npx cap sync android
           cmp www/index.html android/app/src/main/assets/public/index.html
           cmp www/sw.js android/app/src/main/assets/public/sw.js
@@ -174,11 +201,8 @@ jobs:
           cp android/app/build/outputs/apk/release/app-release.apk "$APK_FILE"
           sha256sum "$APK_FILE" > "$CHECKSUM_FILE"
 
-          APKSIGNER="$(find "$ANDROID_HOME/build-tools" -type f -name apksigner | sort -V | tail -n 1)"
-          AAPT="$(find "$ANDROID_HOME/build-tools" -type f -name aapt | sort -V | tail -n 1)"
-          test -x "$APKSIGNER"
-          test -x "$AAPT"
-
+          APKSIGNER="$ANDROID_HOME/build-tools/35.0.0/apksigner"
+          AAPT="$ANDROID_HOME/build-tools/35.0.0/aapt"
           "$APKSIGNER" verify --verbose --print-certs "$APK_FILE" > apk-signature-check.txt
           BADGING="$("$AAPT" dump badging "$APK_FILE")"
           VERSION="${RELEASE_TAG#v}"
@@ -194,29 +218,55 @@ jobs:
           test "$ACTUAL_CERT" = "$EXPECTED_CERT"
 
           APK_SHA256="$(awk '{print $1}' "$CHECKSUM_FILE")"
-          APK_URL="https://github.com/Vimlesh1996/zevonmobility/releases/download/${RELEASE_TAG}/${APK_FILE}"
-          export VERSION VERSION_CODE="$EXPECTED_CODE" APK_SHA256 APK_URL EXPECTED_CERT
+          export RELEASE_TAG VERSION EXPECTED_CODE APK_SHA256 EXPECTED_CERT
           python3 - <<'PY'
           import json, os
           from pathlib import Path
-          manifest = {
+          metadata = {
+              "purpose": "controlled-physical-device-test",
+              "releaseTag": os.environ["RELEASE_TAG"],
               "version": os.environ["VERSION"],
-              "versionCode": int(os.environ["VERSION_CODE"]),
+              "versionCode": int(os.environ["EXPECTED_CODE"]),
               "packageName": "com.zevon.mobility",
-              "apkUrl": os.environ["APK_URL"],
               "sha256": os.environ["APK_SHA256"].lower(),
               "signerSha256": os.environ["EXPECTED_CERT"],
-              "notes": "Verified ZEVON Mobility update."
+              "productionReleaseCreated": False
           }
-          Path("update.json").write_text(json.dumps(manifest, indent=2) + "\n")
+          Path("test-build-metadata.json").write_text(json.dumps(metadata, indent=2) + "\\n")
           PY
-          echo "APK metadata, signer, checksum and packaged web assets verified."
+          echo "APK package, version, versionCode, SHA-256 and signing identity verified."
 
-      - name: Create verified Draft GitHub Release
-        if: github.event_name == 'push' || inputs.dry_run == false
+      - name: Generate production update manifest
+        if: github.event_name == 'push'
+        env:
+          RELEASE_TAG: ${{ steps.build-inputs.outputs.release_tag }}
+        run: |
+          set -euo pipefail
+          python3 scripts/generate-update-manifest.py \\
+            --apk "ZEVON-Mobility-${RELEASE_TAG}.apk" \\
+            --tag "$RELEASE_TAG" \\
+            --output update.json \\
+            --aapt "$ANDROID_HOME/build-tools/35.0.0/aapt" \\
+            --apksigner "$ANDROID_HOME/build-tools/35.0.0/apksigner"
+
+      - name: Upload controlled test APK artifact
+        if: github.event_name == 'workflow_dispatch'
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: zevon-signed-test-${{ steps.build-inputs.outputs.release_tag }}
+          path: |
+            app/ZEVON-Mobility-${{ steps.build-inputs.outputs.release_tag }}.apk
+            app/ZEVON-Mobility-${{ steps.build-inputs.outputs.release_tag }}.apk.sha256
+            app/test-build-metadata.json
+            app/apk-signature-check.txt
+          if-no-files-found: error
+          retention-days: 7
+
+      - name: Create verified GitHub Release
+        if: github.event_name == 'push'
         env:
           GH_TOKEN: ${{ github.token }}
-          RELEASE_TAG: ${{ inputs.release_tag || github.ref_name }}
+          RELEASE_TAG: ${{ steps.build-inputs.outputs.release_tag }}
         run: |
           set -euo pipefail
           APK_FILE="ZEVON-Mobility-${RELEASE_TAG}.apk"
@@ -225,14 +275,10 @@ jobs:
             echo "::error::Release $RELEASE_TAG already exists. Refusing to replace assets."
             exit 1
           fi
-          gh release create "$RELEASE_TAG" --draft --title "ZEVON Mobility $RELEASE_TAG" --generate-notes
-          gh release upload "$RELEASE_TAG" "$APK_FILE" "$CHECKSUM_FILE" update.json
-
-      - name: Report dry-run completion
-        if: github.event_name == 'workflow_dispatch' && inputs.dry_run == true
-        run: |
-          echo "Dry run completed: APK was built and verified; no GitHub Release was created."
+          gh release create "$RELEASE_TAG" "$APK_FILE" "$CHECKSUM_FILE" update.json \\
+            --title "ZEVON Mobility $RELEASE_TAG" --generate-notes
 
       - name: Remove temporary signing material
         if: always()
+        working-directory: app
         run: rm -f zevon-release.keystore
