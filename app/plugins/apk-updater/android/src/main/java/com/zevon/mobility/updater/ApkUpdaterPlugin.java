@@ -18,9 +18,12 @@ import java.net.HttpURLConnection;
 import java.net.URL;
 import java.security.MessageDigest;
 import java.util.Locale;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 @CapacitorPlugin(name = "ApkUpdater")
 public class ApkUpdaterPlugin extends Plugin {
+    private static final AtomicBoolean DOWNLOAD_IN_PROGRESS = new AtomicBoolean(false);
+
     @PluginMethod
     public void getAppVersion(PluginCall call) {
         try {
@@ -122,6 +125,49 @@ public class ApkUpdaterPlugin extends Plugin {
         }
     }
 
+    private HttpURLConnection openTrustedDownloadConnection(URL initialUrl) throws Exception {
+        URL target = initialUrl;
+        for (int redirectCount = 0; ; redirectCount++) {
+            if (!ApkUpdatePolicy.isTrustedDownloadUrl(target.toExternalForm())) {
+                throw new SecurityException("APK download URL is not an approved HTTPS GitHub host.");
+            }
+
+            HttpURLConnection current = (HttpURLConnection) target.openConnection();
+            try {
+                current.setConnectTimeout(15000);
+                current.setReadTimeout(60000);
+                current.setInstanceFollowRedirects(false);
+                current.setRequestProperty("Accept", "application/octet-stream");
+
+                int status = current.getResponseCode();
+                if (ApkUpdatePolicy.isRedirectStatus(status)) {
+                    String location = current.getHeaderField("Location");
+                    URL next = ApkUpdatePolicy.resolveTrustedRedirect(target, location, redirectCount);
+                    current.disconnect();
+                    target = next;
+                    continue;
+                }
+                if (status != HttpURLConnection.HTTP_OK) {
+                    throw new IOException("APK download failed: HTTP " + status);
+                }
+                return current;
+            } catch (Exception e) {
+                current.disconnect();
+                throw e;
+            }
+        }
+    }
+
+    private static long declaredContentLength(HttpURLConnection connection) throws IOException {
+        String value = connection.getHeaderField("Content-Length");
+        if (value == null || value.trim().isEmpty()) return -1L;
+        try {
+            return Long.parseLong(value.trim());
+        } catch (NumberFormatException e) {
+            throw new IOException("APK server returned an invalid Content-Length.", e);
+        }
+    }
+
     @PluginMethod
     public void downloadAndInstall(PluginCall call) {
         String url = call.getString("url");
@@ -150,37 +196,34 @@ public class ApkUpdaterPlugin extends Plugin {
             call.reject("Allow ZEVON to install updates in Android settings first.");
             return;
         }
+        if (!ApkUpdatePolicy.tryAcquireDownload(DOWNLOAD_IN_PROGRESS)) {
+            call.reject("A ZEVON update download is already in progress.");
+            return;
+        }
+
         final String safeName = fileName;
-        new Thread(() -> {
+        try {
+            Thread worker = new Thread(() -> {
             File out = null;
             HttpURLConnection connection = null;
             try {
                 URL target = new URL(url);
-                if (!"https".equalsIgnoreCase(target.getProtocol()) ||
-                    !"github.com".equalsIgnoreCase(target.getHost()) ||
-                    target.getPort() != -1) {
-                    throw new SecurityException("APK download host is not trusted.");
-                }
-                connection = (HttpURLConnection) target.openConnection();
-                connection.setConnectTimeout(15000);
-                connection.setReadTimeout(60000);
-                connection.setInstanceFollowRedirects(true);
-                connection.setRequestProperty("Accept", "application/octet-stream");
-                int status = connection.getResponseCode();
-                if (status < 200 || status >= 300) throw new IOException("APK download failed: HTTP " + status);
+                connection = openTrustedDownloadConnection(target);
+
                 String type = connection.getContentType();
                 if (type != null && !type.toLowerCase(Locale.ROOT).contains("octet-stream") &&
                     !type.toLowerCase(Locale.ROOT).contains("application/vnd.android.package-archive")) {
                     throw new IOException("The release asset did not return an APK download.");
                 }
 
+                long contentLength = declaredContentLength(connection);
+                if (contentLength > ApkUpdatePolicy.MAX_APK_BYTES) {
+                    throw new SecurityException("APK exceeds the maximum permitted download size.");
+                }
+
                 out = new File(getContext().getCacheDir(), safeName);
-                try (InputStream in = new BufferedInputStream(connection.getInputStream());
-                     FileOutputStream fos = new FileOutputStream(out)) {
-                    byte[] buffer = new byte[8192];
-                    int count;
-                    while ((count = in.read(buffer)) != -1) fos.write(buffer, 0, count);
-                    fos.getFD().sync();
+                try (InputStream in = new BufferedInputStream(connection.getInputStream())) {
+                    ApkUpdatePolicy.copyBoundedToFile(in, out, ApkUpdatePolicy.MAX_APK_BYTES);
                 }
                 if (out.length() < 1024 * 1024) throw new IOException("Downloaded APK is unexpectedly small.");
 
@@ -211,14 +254,23 @@ public class ApkUpdaterPlugin extends Plugin {
                 response.put("bytes", out.length());
                 new Handler(Looper.getMainLooper()).post(() -> call.resolve(response));
             } catch (Exception e) {
-                if (out != null) out.delete();
+                if (out != null && out.exists()) {
+                    // Best-effort cleanup: never retain a partial or rejected APK.
+                    out.delete();
+                }
                 String error = e.getMessage() == null
                     ? "Unable to download or verify the APK update."
                     : e.getMessage();
                 new Handler(Looper.getMainLooper()).post(() -> call.reject(error));
             } finally {
                 if (connection != null) connection.disconnect();
+                ApkUpdatePolicy.releaseDownload(DOWNLOAD_IN_PROGRESS);
             }
-        }, "zevon-apk-update").start();
+            }, "zevon-apk-update");
+            worker.start();
+        } catch (RuntimeException e) {
+            ApkUpdatePolicy.releaseDownload(DOWNLOAD_IN_PROGRESS);
+            call.reject("Unable to start the ZEVON update download.", e);
+        }
     }
 }
